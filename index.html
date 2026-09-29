@@ -1,0 +1,1878 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>みちみち</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: 左に「端末」（393×852の画面）、右に「体験版の操作盤」。端末の中は、いつもひとつの画面だけ。
+   配色は仕様書 §7-1 の7色＋マークの橙だけ（ひとつの見た目に固定し、ダークモードは持たない）。4色はロゴと算出中だけ。 */
+:root {
+  --bg:#FAFAF7; --ink:#161616; --sub:#9A9A96; --line:#DEDCD6; --paper:#F3EFE6; --fold:#D9D2C3; --seal:#B8432F; --mark:#E2A32E;
+  --grass:#A3B55B; --sky:#8DB3BE; --soil:#E69B80; --sun:#D3A652; --logo-mark:#EFB700;
+  --stage:#E8E7E2; --panel:#FFFFFF; --panel-line:#E6E4DE; --panel-sub:#74736D;
+  --f-ui:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;  color-scheme:light;
+}
+html, body { height:100%; }
+body { background:var(--stage); color:var(--ink); font-family:var(--f-ui); font-weight:400; font-size:15px; line-height:1.8; -webkit-font-smoothing:antialiased; }
+button, input { font:inherit; color:inherit; }
+button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
+.num { font-family:var(--f-num); font-weight:300; font-variant-numeric:tabular-nums; }
+
+.stage { min-height:100%; display:flex; gap:44px; justify-content:center; align-items:flex-start; padding-block:24px; padding-inline:24px; }
+
+/* ---------- 端末 ---------- */
+.device { flex:0 0 auto; width:413px; height:min(872px, calc(100vh - 48px)); min-height:600px; position:sticky; top:24px;
+  border-radius:54px; border:10px solid var(--ink); background:var(--bg); overflow:hidden; box-shadow:0 40px 80px -44px rgba(22,22,22,.5); }
+.device.buzz { animation:buzz .32s linear; }
+@keyframes buzz { 0%,100% { transform:none; } 20% { transform:translateX(-2px); } 40% { transform:translateX(2px); } 60% { transform:translateX(-2px); } 80% { transform:translateX(1px); } }
+.statusbar { position:absolute; z-index:40; top:0; left:0; right:0; height:48px; display:flex; align-items:center; padding:0 34px; font-family:var(--f-num); font-weight:400; font-size:14px; pointer-events:none; }
+.statusbar::after { content:""; position:absolute; top:11px; left:50%; width:110px; height:30px; margin-left:-55px; border-radius:20px; background:var(--ink); }
+.app { position:absolute; inset:0; }
+
+.scr { position:absolute; inset:0; z-index:2; display:flex; flex-direction:column; padding:80px 24px 40px; animation:scrIn .7s ease both; }
+@keyframes scrIn { from { opacity:0; } to { opacity:1; } }
+
+.lead { margin:0; font-size:18px; line-height:1.6; text-wrap:balance; }
+.note { margin:0; font-size:12px; line-height:1.8; color:var(--sub); }
+.label { margin:0; font-size:12px; letter-spacing:.14em; color:var(--sub); }
+.btn { border:0; border-radius:999px; height:56px; padding:0 24px; font-size:16px; letter-spacing:.08em; cursor:pointer; transition:transform .15s ease; }
+.btn:active { transform:scale(.985); }
+.btn.primary { background:var(--ink); color:var(--bg); }
+.btn.ghost { background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1px var(--line); }
+.link { background:none; border:0; padding:8px 4px; font-size:13px; color:var(--sub); text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:5px; cursor:pointer; }
+
+/* 0 起動 */
+.s-splash { align-items:center; justify-content:center; padding:0; animation:none; }
+.s-splash .logo { width:250px; max-width:70%; overflow:visible; }
+.logo g { transition:opacity .45s ease; }
+.s-splash.fade .logo-l1, .s-splash.fade .logo-l2, .s-splash.fade .logo-l3, .s-splash.fade .logo-l4 { opacity:0; }
+
+/* 00-a なぞる */
+.s-map { padding-inline:0; padding-bottom:0; }
+.map-head { padding:0 24px 24px; display:grid; gap:8px; }
+.mapwrap { position:relative; flex:1; min-height:0; border-top:1px solid var(--line); background:var(--bg); }
+.mapwrap canvas { position:absolute; inset:0; width:100%; height:100%; touch-action:none; display:block; }
+.map-tools { display:flex; align-items:center; gap:8px; padding:16px 24px 32px; border-top:1px solid var(--line); }
+.map-tools .grow { flex:1; }
+.map-tools .btn { height:48px; padding:0 26px; font-size:15px; }
+.seg { display:inline-flex; gap:2px; }
+.seg button { border:0; background:none; padding:8px 10px; font-size:13px; color:var(--sub); cursor:pointer; border-bottom:1px solid transparent; }
+.seg button[aria-pressed="true"] { color:var(--ink); border-bottom-color:var(--ink); }
+.chip { border:0; background:none; padding:8px 10px; font-size:13px; color:var(--sub); cursor:pointer; }
+.map-demo { position:absolute; top:12px; right:12px; z-index:2; border:1px solid var(--line); background:var(--bg); border-radius:999px; padding:6px 14px; font-size:12px; color:var(--ink); cursor:pointer; }
+
+/* 00-b 登録 */
+/* 左上の丸いボタン：戻る（＜）とホーム（家）。「地図を見る」と高さをそろえる */
+.nav-btn { position:absolute; z-index:6; top:50px; left:16px; width:44px; height:44px; padding:0; border-radius:50%; border:1px solid var(--line); background:var(--bg); color:var(--ink); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.nav-btn svg { display:block; width:20px; height:20px; }
+.s-places, .s-privacy { padding-top:112px; }
+.s-places { gap:48px; }
+.fields { display:grid; gap:32px; }
+.field { display:grid; gap:4px; }
+.field span { font-size:12px; letter-spacing:.14em; color:var(--sub); }
+.field input { border:0; border-bottom:1px solid var(--line); background:transparent; padding:8px 0; font-size:17px; border-radius:0; }
+.field input:focus { outline:none; border-bottom-color:var(--ink); }
+.field input[readonly] { color:var(--ink); }
+.field input::placeholder { color:var(--line); }
+.bottom-row { margin-top:auto; display:flex; align-items:center; gap:8px; }
+.bottom-row .grow { flex:1; }
+
+/* 00-c 許可 */
+.s-privacy { gap:32px; }
+.opt { display:flex; gap:16px; align-items:flex-start; padding:20px 0; border-bottom:1px solid var(--line); }
+.opt:first-of-type { border-top:1px solid var(--line); }
+.opt div { flex:1; min-width:0; }
+.opt b { display:block; font-weight:400; font-size:15px; }
+.opt small { display:block; font-size:12px; color:var(--sub); line-height:1.7; margin-top:2px; }
+.sw { position:relative; flex:0 0 auto; width:44px; height:26px; border-radius:999px; box-shadow:inset 0 0 0 1px var(--line); }
+.sw::after { content:""; position:absolute; top:4px; left:4px; width:18px; height:18px; border-radius:50%; background:var(--line); }
+.sw input { position:absolute; inset:0; opacity:0; margin:0; }
+
+/* 01 条件選択 */
+.s-home { gap:48px; justify-content:center; }
+.choice { display:grid; gap:12px; }
+.opts { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; }
+.opts button { height:56px; border:1px solid var(--line); border-radius:12px; background:transparent; color:var(--sub); font-size:16px; cursor:pointer; transition:color .25s, border-color .25s; }
+.opts button[aria-pressed="true"] { color:var(--ink); border-color:var(--ink); }
+.opts .num { font-size:17px; }
+.home-actions { display:grid; gap:12px; }
+.home-foot { text-align:center; margin-top:-24px; }
+
+/* 02 算出中・03/04 コンパス（キャンバス「C′ 目盛りと▲あり」）：マークは画面をまたいで同じもの。
+   コンパスは中央、距離はそのすぐ下。行や距離は visibility で出し入れし、コンパスの位置が動かないようにする */
+.mark-layer { position:absolute; inset:0; z-index:1; pointer-events:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+.mark { display:block; width:340px; max-width:88%; height:auto; aspect-ratio:1; color:var(--mark); overflow:visible; }
+/* §7-9 算出が終わる瞬間の合図：明るさ（不透明度）とわずかなにじみだけ。大きさは変えない。1回の外出につき1度だけ */
+/* 光る時間は 680ms。にじみは 10px を超えない範囲で、2枚重ねて濃くし、ピークを少し保つ */
+@keyframes markSpark {
+  0%   { opacity:.85; filter:none; }
+  15%  { opacity:1;   filter:drop-shadow(0 0 4px rgba(226,163,46,.8)) drop-shadow(0 0 10px rgba(226,163,46,.85)); }
+  35%  { opacity:1;   filter:drop-shadow(0 0 4px rgba(226,163,46,.8)) drop-shadow(0 0 10px rgba(226,163,46,.85)); }
+  100% { opacity:.90; filter:none; }
+}
+.mark.spark { animation:markSpark 680ms ease-out both; }
+.cp-line { margin:0; visibility:hidden; }
+.cp-cond { font-size:12px; letter-spacing:.12em; color:var(--sub); }
+.cp-dist { display:flex; align-items:baseline; gap:6px; line-height:1; font-size:40px; letter-spacing:.02em; font-family:var(--f-num); font-weight:300; font-variant-numeric:tabular-nums; }
+.cp-dist small { font-size:15px; letter-spacing:.06em; color:var(--sub); min-width:2.2ch; text-align:left; }   /* km と m で幅をそろえ、数字の左端を動かさない */
+.cp-eta { font-size:15px; color:var(--sub); }
+.mark-layer.show-dist .cp-dist { visibility:visible; animation:fadeIn .6s ease both; }
+.mark-layer.pre .cp-cond, .mark-layer.pre .cp-eta { visibility:visible; animation:fadeIn .6s ease both; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+.pre-only { display:none !important; }
+.pre .pre-only { display:block !important; }
+.quiet-note { position:absolute; left:24px; right:24px; bottom:40px; margin:0; text-align:center; font-size:12px; color:var(--sub); }
+.env-icon { position:absolute; left:24px; bottom:36px; width:46px; }
+.env-icon svg { display:block; width:100%; }
+.corner-map { position:absolute; z-index:3; top:56px; right:20px; background:none; border:0; padding:8px 4px; font-size:13px; color:var(--sub); cursor:pointer; text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:5px; }
+
+/* 05/08 のりば */
+.s-platform { justify-content:center; align-items:center; text-align:center; gap:24px; }
+.pl-station { margin:0; font-size:22px; letter-spacing:.06em; }
+.pl-row { margin:0; display:flex; align-items:baseline; justify-content:center; gap:12px; }
+.pl-row .num { font-size:76px; line-height:1; }
+.pl-row .num.time { font-size:52px; }
+.pl-row span:last-child { font-size:16px; color:var(--sub); }
+.pl-rule { height:1px; background:var(--line); margin:24px 0; }
+.pl-pre { display:grid; gap:4px; }
+
+/* 06 車内・07 降車通知 */
+.s-ride, .s-alert { align-items:center; justify-content:center; }
+.ride-dots { display:flex; flex-direction:column; align-items:center; position:relative; }
+.ride-dots::before { content:""; position:absolute; top:12px; bottom:12px; left:50%; width:1px; background:var(--line); }
+.ride-dots i { position:relative; width:12px; height:12px; margin:14px 0; border-radius:50%; background:var(--ink); transition:opacity .6s, transform .6s, height .6s, margin .6s; }
+.ride-dots i.last { width:20px; height:20px; margin:10px 0; background:var(--bg); box-shadow:inset 0 0 0 1.5px var(--ink); }
+.ride-dots i.gone { opacity:0; transform:scale(.3); height:0; margin:0; }
+.gps-ok { position:absolute; top:62px; left:24px; font-size:11px; color:var(--sub); transition:opacity .8s; }
+.alert-text { margin:0; font-size:22px; letter-spacing:.12em; }
+
+/* 09 到着：「今日の場所」と町名は上寄りにまとめ、封筒は下寄りに離して置く（画面の高さに対する割合で配置）。
+   開けた便箋が町名に重ならないよう、封筒の上端は町名から少なくとも 158px 下げる */
+.s-arrived { display:block; padding:0; animation-duration:1.4s; }
+.today { position:absolute; left:0; right:0; top:28.2%; margin:0; text-align:center; font-size:12px; letter-spacing:.12em; color:var(--sub); }
+.town { position:absolute; left:24px; right:24px; top:34.3%; margin:0; text-align:center; font-size:36px; line-height:1.2; letter-spacing:.08em; text-wrap:balance; }
+.s-arrived .env { position:absolute; left:50%; top:max(55.5%, calc(34.3% + 158px)); margin-left:-115px; }
+/* 09 封筒・10 開封（キャンバス「封筒 B」）：その場で開く。ふたが開き、便箋が上に出て「きっかけがほしいときは」と一語が浮かぶ。
+   封蝋は朱に「？」。ラベルと一語の2行が入るよう、封筒の高さは 175 */
+.env { position:relative; flex:0 0 auto; width:230px; height:175px; padding:0; border:0; background:none; cursor:pointer; perspective:900px; opacity:0; pointer-events:none; transition:opacity 2s ease; }
+.env.shown { opacity:1; pointer-events:auto; }
+.env.shown:not(.open) { animation:envNudge 3.2s ease-in-out infinite; }
+@keyframes envNudge { 0%, 86%, 100% { transform:none; } 90% { transform:rotate(-2deg); } 95% { transform:rotate(1.5deg); } }
+.env > * { position:absolute; }
+.env-back { inset:0; background:var(--fold); border-radius:6px; }
+.env-card { left:7%; right:7%; top:8%; bottom:8%; z-index:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:10px; box-sizing:border-box; background:var(--bg); border:1px solid var(--fold); border-radius:4px; transition:transform .7s cubic-bezier(.2,.7,.2,1) .35s; }
+.env-lead { position:static; font-size:13px; line-height:1.4; letter-spacing:.14em; color:var(--sub); white-space:nowrap; opacity:0; transition:opacity .4s ease .9s; }
+.env-word { position:static; font-weight:400; font-size:30px; line-height:1.3; letter-spacing:.16em; color:var(--ink); white-space:nowrap; opacity:0; transition:opacity .4s ease .9s; }
+.env-front { top:0; left:0; z-index:3; display:block; overflow:visible; }
+.env-flap { left:0; right:0; top:0; height:58%; z-index:4; transform-origin:top center; transition:transform .5s ease, z-index 0s linear .25s; }
+.env-flap svg { display:block; overflow:visible; }
+.env-seal { left:50%; top:58%; z-index:5; width:30px; height:30px; margin:-15px 0 0 -15px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--seal); color:var(--bg); font-size:15px; line-height:1; transition:opacity .25s; }
+.env.open .env-card { z-index:2; transform:translateY(-80%); }   /* ラベルと一語が封筒の口より上にしっかり出る高さ */
+.env.open .env-lead, .env.open .env-word { opacity:1; }
+.env.open .env-flap { z-index:0; transform:rotateX(180deg); }
+.env.open .env-seal { opacity:0; }
+
+/* 11 終了 */
+.s-end { align-items:center; justify-content:center; }
+.end-line { margin:0; font-size:13px; letter-spacing:.14em; color:var(--sub); text-align:center; }
+
+/* 端末の中の地図（本人が開いたときだけ） */
+.phone-map { position:absolute; inset:0; z-index:20; background:var(--bg); display:flex; flex-direction:column; padding-top:64px; }
+.phone-map .mapwrap { flex:1; }
+.phone-map footer { padding:12px 24px 32px; display:flex; justify-content:flex-end; border-top:1px solid var(--line); }
+
+/* ---------- 体験版の操作盤（アプリの外側） ---------- */
+.sim { flex:0 1 540px; min-width:0; display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--panel-line); border-radius:18px; padding:22px 24px; font-size:14px; }
+.sim > * { flex-shrink:0; }
+.sim-head { display:grid; gap:6px; padding-bottom:16px; }
+.sim-head .eyebrow { font-size:11px; letter-spacing:.18em; color:var(--panel-sub); font-weight:700; }
+.sim-head h2 { margin:0; font-size:18px; font-weight:700; letter-spacing:.04em; }
+.sim-head p { margin:0; font-size:13px; color:var(--panel-sub); line-height:1.75; }
+.sim-bar { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; padding:12px 0; border-top:1px solid var(--panel-line); }
+.sim-clock { font-family:var(--f-num); font-size:24px; font-weight:400; }
+.sim-date, .sim-elapsed { font-size:12px; color:var(--panel-sub); }
+.sim-bar .speed { margin-left:auto; display:inline-flex; border:1px solid var(--line); border-radius:999px; padding:2px; align-self:center; }
+.speed button { border:0; background:none; border-radius:999px; padding:4px 11px; font-family:var(--f-num); font-size:12px; cursor:pointer; color:var(--panel-sub); }
+.speed button[aria-pressed="true"] { background:var(--ink); color:var(--bg); }
+.sim-map { position:relative; height:340px; border-radius:12px; overflow:hidden; background:#EDEFE9; }
+.sim-map canvas { position:absolute; inset:0; width:100%; height:100%; touch-action:none; display:block; }
+.sim-layers { position:absolute; left:8px; bottom:8px; display:flex; flex-wrap:wrap; gap:6px; }
+.sim-layers label { display:flex; align-items:center; gap:5px; font-size:11px; background:rgba(250,250,247,.92); padding:4px 10px; border-radius:999px; cursor:pointer; }
+.sim-layers input { margin:0; accent-color:#3F7A6C; }
+.sim-zoom { position:absolute; right:8px; top:8px; display:flex; flex-direction:column; gap:4px; }
+.sim-zoom button { width:30px; height:30px; border-radius:8px; border:0; background:rgba(250,250,247,.92); cursor:pointer; font-size:15px; }
+.sim-ctrl { display:grid; gap:10px; padding:16px 0; }
+.sim-ctrl .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.hint { font-size:12px; color:var(--panel-sub); margin:0; line-height:1.7; }
+.sbtn { border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:8px 14px; font-size:13px; cursor:pointer; }
+.sbtn.on, .sbtn.strong { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.pad { display:inline-grid; grid-template-columns:repeat(3, 38px); gap:4px; }
+.pad button { height:34px; border:1px solid var(--line); background:var(--panel); border-radius:8px; cursor:pointer; }
+.sim-log-wrap { border-top:1px solid var(--panel-line); padding-top:14px; }
+.sim-log-wrap h3 { margin:0 0 8px; font-size:11px; letter-spacing:.16em; color:var(--panel-sub); font-weight:700; }
+.sim-log { list-style:none; margin:0; padding:0; display:grid; gap:9px; max-height:300px; overflow:auto; font-size:12.5px; line-height:1.7; }
+.sim-log li { display:grid; grid-template-columns:44px minmax(0,1fr); gap:8px; }
+.sim-log time { color:var(--panel-sub); font-family:var(--f-num); font-size:12px; }
+.sim-log li.ai span::before { content:"AI"; font-family:var(--f-num); font-size:10px; font-weight:400; color:var(--bg); background:var(--ink); border-radius:4px; padding:1px 5px; margin-right:6px; vertical-align:1px; }
+.sim-foot { display:flex; gap:8px; flex-wrap:wrap; padding-top:14px; border-top:1px solid var(--panel-line); margin-top:14px; }
+.sim-foot .credit { font-size:11px; color:var(--panel-sub); flex-basis:100%; margin:0; line-height:1.7; }
+.sheet-handle { display:none; }
+
+@media (max-width: 960px) {
+  .stage { display:block; padding:0; height:100%; }
+  .device { width:100%; height:100%; min-height:0; border:0; border-radius:0; position:relative; top:0; box-shadow:none; }
+  .statusbar { display:none; }
+  .scr { padding-top:40px; padding-bottom:104px; }
+  .s-map { padding-bottom:0; }
+  .s-map .map-tools { padding-bottom:92px; }
+  .corner-map { top:16px; }
+  .nav-btn { top:12px; }
+  .s-places, .s-privacy { padding-top:72px; }
+  .quiet-note { bottom:104px; }
+  .env-icon { bottom:98px; }
+  .gps-ok { top:20px; }
+  .phone-map { padding-top:24px; }
+  .phone-map footer { padding-bottom:92px; }
+  .sim { position:fixed; z-index:50; left:0; right:0; bottom:0; max-height:78%; border-radius:18px 18px 0 0; border-width:1px 0 0; padding:0 16px calc(12px + env(safe-area-inset-bottom, 0px)); overflow:auto;
+    box-shadow:0 -12px 40px -20px rgba(22,22,22,.4); transform:translateY(calc(100% - 72px)); transition:transform .35s ease; }
+  .sim.open { transform:none; }
+  .sheet-handle { display:flex; align-items:center; gap:10px; width:100%; min-height:72px; border:0; padding:0; cursor:pointer; position:sticky; top:0; background:var(--panel); z-index:2; text-align:left; }
+  .sheet-handle b { font-size:14px; }
+  .sheet-handle > span:not(.grip):not(.quick) { font-family:var(--f-num); font-size:12px; color:var(--panel-sub); }
+  .sheet-handle .grip { width:36px; height:4px; border-radius:2px; background:var(--line); position:absolute; top:7px; left:50%; margin-left:-18px; }
+  .sheet-handle .quick { margin-left:auto; display:flex; gap:6px; }
+  .sim-head { display:none; }
+  .sim-map { height:260px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+}
+</style>
+
+<div class="stage">
+  <div class="device" id="device">
+    <div class="statusbar" aria-hidden="true"><span id="statusTime">10:00</span></div>
+    <div class="app" id="app">
+
+      <section class="scr s-splash" data-s="splash"><svg class="logo" viewBox="22.087 14.724 140.434 31.659" role="img" aria-label="みちみち"><g class="logo-l1"><path d="M29.919 35.117C29.919 34.535 29.419 34.035 28.836 34.035C28.253 34.035 27.753 34.535 27.753 35.117C27.753 35.7 28.253 36.2 28.836 36.2C29.419 36.2 29.919 35.7 29.919 35.117M43.874 36.075C43.125 35.95 42.458 35.867 41.792 35.785L41.167 41.617L36.668 41.117L37.168 35.285C36.46 35.201 35.71 35.16 34.918 35.117C33.96 38.2 32.294 40.284 29.253 40.45C25.129 40.7 23.087 38.117 23.087 35.367C23.087 32.535 25.295 29.619 29.627 29.619C30.127 29.619 30.669 29.66 31.252 29.744L31.502 24.911L24.587 24.87L24.545 20.621L36.293 20.621C36.21 23.87 36.168 27.203 35.876 30.203L37.584 30.328L38.001 25.536L42.833 25.911L42.291 30.828L44.832 31.203Z" fill="#A3B55B"/></g><g class="logo-l2"><path d="M64.282 28.91C69.698 29.66 71.989 32.368 71.989 35.117C71.989 38.492 68.573 41.907 63.157 41.907C62.032 41.907 60.867 41.742 59.617 41.45L59.908 37.742C60.742 37.867 61.492 37.95 62.2 37.95C65.323 37.95 67.115 36.742 67.115 35.492C67.115 34.076 64.782 32.618 59.408 32.826L59.658 25.953L53.243 25.953L53.16 21.413L59.825 21.413L59.95 18.371L65.032 18.663L64.825 21.371L74.614 21.371L74.697 25.911L64.49 25.911Z" fill="#8DB3BE"/></g><g class="logo-l3"><path d="M89.857 35.117C89.857 34.535 89.357 34.035 88.774 34.035C88.19 34.035 87.69 34.535 87.69 35.117C87.69 35.7 88.19 36.2 88.774 36.2C89.357 36.2 89.857 35.7 89.857 35.117M103.812 36.075C103.062 35.95 102.396 35.867 101.729 35.785L101.104 41.617L96.605 41.117L97.105 35.285C96.397 35.201 95.647 35.16 94.856 35.117C93.898 38.2 92.231 40.284 89.19 40.45C85.066 40.7 83.025 38.117 83.025 35.367C83.025 32.535 85.233 29.619 89.565 29.619C90.065 29.619 90.607 29.66 91.19 29.744L91.44 24.911L84.525 24.87L84.483 20.621L96.23 20.621C96.147 23.87 96.105 27.203 95.814 30.203L97.522 30.328L97.938 25.536L102.77 25.911L102.229 30.828L104.77 31.203Z" fill="#E69B80"/></g><g class="logo-l4"><path d="M124.219 28.91C129.635 29.66 131.927 32.368 131.927 35.117C131.927 38.492 128.511 41.907 123.094 41.907C121.969 41.907 120.803 41.742 119.553 41.45L119.846 37.742C120.678 37.867 121.428 37.95 122.136 37.95C125.261 37.95 127.052 36.742 127.052 35.492C127.052 34.076 124.719 32.618 119.346 32.826L119.596 25.953L113.18 25.953L113.096 21.413L119.761 21.413L119.886 18.371L124.969 18.663L124.761 21.371L134.55 21.371L134.633 25.911L124.427 25.911Z" fill="#D3A652"/></g><g class="logo-mark"><path d="M146.534 42.73C146.063 43.767 144.84 44.227 143.803 43.755C142.764 43.284 142.305 42.061 142.776 41.025C143.249 39.987 144.471 39.529 145.508 39.999C146.546 40.471 147.005 41.694 146.534 42.73" fill="#EFB700"/><path d="M147.458 43.15C146.755 44.698 144.931 45.383 143.383 44.68C141.835 43.977 141.15 42.153 141.853 40.605C142.556 39.057 144.381 38.372 145.928 39.075C147.476 39.778 148.161 41.602 147.458 43.15Z" fill="none" stroke="#EFB700" stroke-width="0.5"/><path d="M146.347 38.151C146.684 38.304 146.977 38.513 147.227 38.758L161.522 21.434C159.722 19.95 157.736 18.709 155.613 17.745C153.49 16.781 151.249 16.102 148.95 15.724L145.309 37.887C145.659 37.914 146.01 37.998 146.347 38.151" fill="#EFB700"/></g></svg></section>
+
+      <section class="scr s-end" data-s="failed" hidden><p class="end-line">地図のデータを読み込めませんでした。<br>ページを開き直してください。</p></section>
+
+      <section class="scr s-map" data-s="trace" hidden>
+        <header class="map-head">
+          <p class="lead">歩いたことのある範囲をなぞる</p>
+          <p class="note">20〜30秒ほど、だいたいで大丈夫です。この地図は設定のためだけに使います。</p>
+        </header>
+        <div class="mapwrap"><canvas id="cvTrace" aria-label="なぞるための地図"></canvas><button type="button" class="map-demo" id="traceExample">例を入れる</button></div>
+        <footer class="map-tools">
+          <div class="seg" role="group" aria-label="地図の操作">
+            <button type="button" data-tmode="draw" aria-pressed="true">なぞる</button>
+            <button type="button" data-tmode="pan" aria-pressed="false">動かす</button>
+          </div>
+          <button type="button" class="chip" id="traceUndo">1つ戻す</button>
+          <span class="grow"></span>
+          <button type="button" class="btn primary" id="traceNext">次へ</button>
+        </footer>
+      </section>
+
+      <section class="scr s-places" data-s="places" hidden>
+        <button type="button" class="nav-btn" id="placesBack" aria-label="前のページに戻る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <p class="lead">自宅と、よく行く場所</p>
+        <form class="fields" id="placesForm" autocomplete="off">
+          <label class="field"><span>自宅</span><input id="pl0" value="一乗寺駅のそば" readonly></label>
+          <label class="field"><span>よく行く場所</span><input id="pl1" list="nameList" placeholder="町名か駅名"></label>
+          <label class="field"><span>よく行く場所</span><input id="pl2" list="nameList" placeholder="町名か駅名"></label>
+          <datalist id="nameList"></datalist>
+          <button type="submit" hidden></button>
+        </form>
+        <p class="note" id="placesNote"></p>
+        <div class="bottom-row">
+          <button type="button" class="chip" id="placesExample">例を入れる</button>
+          <span class="grow"></span>
+          <button type="button" class="btn primary" id="placesNext">次へ</button>
+        </div>
+      </section>
+
+      <section class="scr s-privacy" data-s="privacy" hidden>
+        <button type="button" class="nav-btn" id="privacyBack" aria-label="前のページに戻る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <p class="lead">位置情報と写真</p>
+        <div>
+          <div class="opt">
+            <div><b>位置情報を「常に許可」にする</b><small>任意。アプリを開かない日も、歩いた場所が「知っている範囲」に加わります。体験版では使えません。</small></div>
+            <label class="sw"><input type="checkbox" disabled aria-label="位置情報を常に許可にする"></label>
+          </div>
+          <div class="opt">
+            <div><b>写真の位置情報を使う</b><small>任意。撮影した場所を「知っている範囲」に足します。体験版では使えません。</small></div>
+            <label class="sw"><input type="checkbox" disabled aria-label="写真の位置情報を使う"></label>
+          </div>
+        </div>
+        <p class="note">どちらも端末の中だけで使います。なぞった範囲や登録した場所も、端末の外には出しません。</p>
+        <button type="button" class="btn primary" id="privacyDone" style="margin-top:auto">はじめる</button>
+      </section>
+
+      <section class="scr s-home" data-s="home" hidden>
+        <div class="choice">
+          <p class="label">片道の遠さ</p>
+          <div class="opts" data-k="bucket" role="group" aria-label="片道の遠さ">
+            <button type="button" data-v="20" aria-pressed="true">〜<span class="num">20</span>分</button>
+            <button type="button" data-v="45" aria-pressed="false">〜<span class="num">45</span>分</button>
+            <button type="button" data-v="90" aria-pressed="false">〜<span class="num">90</span>分</button>
+          </div>
+        </div>
+        <div class="choice">
+          <p class="label">移動手段</p>
+          <div class="opts" data-k="mode" role="group" aria-label="移動手段">
+            <button type="button" data-v="walk" aria-pressed="true">徒歩</button>
+            <button type="button" data-v="bike" aria-pressed="false">自転車</button>
+            <button type="button" data-v="transit" aria-pressed="false">公共交通</button>
+          </div>
+        </div>
+        <div class="home-actions">
+          <button type="button" class="btn ghost" id="btnOmakase">おまかせ</button>
+          <button type="button" class="btn primary" id="btnGo">出かける</button>
+        </div>
+        <div class="home-foot"><button type="button" class="link" id="btnEditKnown">知っている範囲を直す</button></div>
+      </section>
+
+      <section class="scr" data-s="calc" hidden aria-label="行き先を選んでいます"></section>
+
+      <section class="scr s-compass" data-s="compass" hidden>
+        <button type="button" class="nav-btn" data-nav="conditions" aria-label="時間と手段を選ぶ画面に戻る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <p class="quiet-note" id="timeNote" hidden></p>
+        <div class="env-icon pre-only" aria-label="封筒が1通"><svg viewBox="0 0 200 132" aria-hidden="true"><rect x=".5" y=".5" width="199" height="131" rx="4" fill="#F3EFE6" stroke="#D9D2C3" stroke-width="2"/><path d="M1.5 1.5L100 76L198.5 1.5" fill="none" stroke="#D9D2C3" stroke-width="2"/><circle cx="100" cy="76" r="15" fill="#B8432F"/></svg>
+</div>
+        <button type="button" class="corner-map" data-open-map>地図を見る</button>
+      </section>
+
+      <section class="scr s-platform" data-s="platform" hidden>
+        <button type="button" class="nav-btn" data-nav="conditions" aria-label="時間と手段を選ぶ画面に戻る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="pl-pre pre-only"><p class="cp-cond" id="plCond"></p></div>
+        <p class="pl-station" id="plStation">一乗寺駅</p>
+        <p class="pl-row"><span class="num" id="plNum">1</span><span>番のりば</span></p>
+        <p class="pl-row"><span class="num time" id="plTime">10:00</span><span>発</span></p>
+        <div class="pl-pre pre-only"><p class="cp-eta" id="plEta"></p></div>
+        <div class="env-icon pre-only" aria-label="封筒が1通"><svg viewBox="0 0 200 132" aria-hidden="true"><rect x=".5" y=".5" width="199" height="131" rx="4" fill="#F3EFE6" stroke="#D9D2C3" stroke-width="2"/><path d="M1.5 1.5L100 76L198.5 1.5" fill="none" stroke="#D9D2C3" stroke-width="2"/><circle cx="100" cy="76" r="15" fill="#B8432F"/></svg>
+</div>
+        <button type="button" class="corner-map" data-open-map>地図を見る</button>
+      </section>
+
+      <section class="scr s-ride" data-s="ride" hidden>
+        <span class="gps-ok" id="gpsOk" hidden>位置を確かめました</span>
+        <div class="ride-dots" id="rideDots" aria-label="降りるまでの駅"></div>
+        <button type="button" class="corner-map" data-open-map>地図を見る</button>
+      </section>
+
+      <section class="scr s-alert" data-s="alert" hidden>
+        <p class="alert-text">次で降ります</p>
+        <button type="button" class="corner-map" data-open-map>地図を見る</button>
+      </section>
+
+      <section class="scr s-arrived" data-s="arrived" hidden>
+        <button type="button" class="nav-btn" id="btnFinish" aria-label="今日を終えて、時間と手段を選ぶ画面に戻る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.2 12 4.5l8 6.7M6.5 9.4v10.1h11V9.4M10 19.5v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <p class="today">今日の場所</p>
+        <p class="town" id="townName">—</p>
+        <button type="button" class="env" id="envArrived" aria-label="封筒を開ける">
+          <span class="env-back"></span>
+          <span class="env-card">
+            <span class="env-lead">きっかけがほしいときは</span>
+            <span class="env-word" id="hintWord"></span>
+          </span>
+          <svg class="env-front" viewBox="0 0 230 175" width="230" height="175" aria-hidden="true"><path d="M0.5,0.5 L115,91 L229.5,0.5 L229.5,169 Q229.5,174.5 224,174.5 L6,174.5 Q0.5,174.5 0.5,169 Z" fill="#F3EFE6" stroke="#D9D2C3"/></svg>
+          <span class="env-flap"><svg viewBox="0 0 230 102" width="230" height="102" aria-hidden="true"><path d="M0.5,6 Q0.5,0.5 6,0.5 L224,0.5 Q229.5,0.5 229.5,6 L115,101.5 Z" fill="#F3EFE6" stroke="#D9D2C3"/></svg></span>
+          <span class="env-seal" aria-hidden="true">？</span>
+        </button>
+        <button type="button" class="corner-map" data-open-map>地図を見る</button>
+      </section>
+
+      <section class="scr s-end" data-s="end" hidden>
+        <p class="end-line" id="endLine"></p>
+      </section>
+
+      <div class="mark-layer" id="markLayer" hidden>
+        <p class="cp-line cp-cond" id="cpCond"></p>
+        <svg class="mark" id="mark" viewBox="-170 -170 340 340" aria-hidden="true">
+          <defs>
+            <radialGradient id="markGrad" cx="0" cy="0" r="156" gradientUnits="userSpaceOnUse">
+              <stop offset="0.155" stop-color="currentColor" stop-opacity="1"/>
+              <stop offset="1" stop-color="currentColor" stop-opacity="0.12"/>
+            </radialGradient>
+          </defs>
+          <g id="mkDial" style="opacity:0">
+            <circle r="156" fill="none" stroke="#DEDCD6" stroke-width="1.2"/>
+            <path id="mkTicksMinor" fill="none" stroke="#9A9A96" stroke-width="1.2" opacity="0.45"/>
+            <path id="mkTicksMajor" fill="none" stroke="#161616" stroke-width="1.2" opacity="0.8"/>
+            <path d="M0,-170 l6,9 h-12 z" fill="#161616"/>
+          </g>
+          <g id="mkRot"><path d="M-40.38,-150.69 A156,156 0 0 1 40.38,-150.69 L6.26,-23.36 A24.18,24.18 0 0 0 -6.26,-23.36 Z" fill="url(#markGrad)"/></g>
+          <circle r="17.71" fill="none" stroke="currentColor" stroke-width="2.65"/>
+          <circle r="12.64" fill="currentColor"/>
+        </svg>
+        <p class="cp-line cp-dist" aria-live="polite"><span id="distNum">—</span><small id="distUnit">m</small></p>
+        <p class="cp-line cp-eta" id="cpEta"></p>
+      </div>
+
+      <div class="phone-map" id="phoneMap" hidden>
+        <div class="mapwrap"><canvas id="cvPhone" aria-label="地図"></canvas></div>
+        <footer><button type="button" class="link" id="phoneMapClose">閉じる</button></footer>
+      </div>
+    </div>
+  </div>
+
+  <aside class="sim" id="sim" aria-label="体験版の操作盤">
+    <button type="button" class="sheet-handle" id="sheetHandle" aria-expanded="false">
+      <span class="grip"></span><b>操作盤</b><span id="sheetClock">10:00</span>
+      <span class="quick" id="sheetQuick"></span>
+    </button>
+    <header class="sim-head">
+      <span class="eyebrow">体験版の操作盤（アプリの外側）</span>
+      <h2>ここで「歩く」を再現します</h2>
+      <p>実機では、あなた自身がスマホのコンパスを見ながら歩きます。体験版では、GPSと向きの代わりにこの盤で移動させます。舞台は京都・一乗寺駅のまわり。地図・町名・地形は実在のデータです。</p>
+    </header>
+    <div class="sim-bar">
+      <span class="sim-clock" id="simClock">10:00</span>
+      <span class="sim-date" id="simDate"></span>
+      <span class="sim-elapsed" id="simElapsed">出かける前</span>
+      <div class="speed" role="group" aria-label="時間の速さ">
+        <button type="button" data-speed="10" aria-pressed="false">×10</button>
+        <button type="button" data-speed="30" aria-pressed="true">×30</button>
+        <button type="button" data-speed="60" aria-pressed="false">×60</button>
+      </div>
+    </div>
+    <div class="sim-map">
+      <canvas id="cvSim" aria-label="体験版の世界地図"></canvas>
+      <div class="sim-zoom"><button type="button" id="simZoomIn" aria-label="拡大">＋</button><button type="button" id="simZoomOut" aria-label="縮小">−</button><button type="button" id="simFollow" aria-label="現在地へ">◎</button></div>
+      <div class="sim-layers">
+        <label><input type="checkbox" id="lyKnown" checked> 知っている区画</label>
+        <label><input type="checkbox" id="lyTarget"> 行き先と候補（ネタばれ）</label>
+      </div>
+    </div>
+    <div class="sim-ctrl" id="simCtrl"></div>
+    <div class="sim-log-wrap">
+      <h3>裏側で起きていること</h3>
+      <ol class="sim-log" id="simLog"></ol>
+    </div>
+    <div class="sim-foot">
+      <button type="button" class="sbtn" id="simQuick">初回設定を例で済ませる</button>
+      <button type="button" class="sbtn" id="simReset">最初からやり直す</button>
+      <p class="credit">地図 © OpenStreetMap contributors（ODbL）／標高・町名：国土地理院。電車の時刻とのりば番号は体験用のシナリオで、実際の時刻表ではありません。</p>
+    </div>
+  </aside>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const S3 = Math.sqrt(3);
+
+// ---------------------------------------------------------------- 保存（この端末の中だけ）
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('michimichi:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('michimichi:' + k, JSON.stringify(v)); } catch (e) {} },
+  clear() { try { Object.keys(localStorage).filter(k => k.startsWith('michimichi:')).forEach(k => localStorage.removeItem(k)); } catch (e) {} },
+};
+
+// ---------------------------------------------------------------- 幾何
+function hexOf(x, y, a) {
+  let q = (S3 / 3 * x - y / 3) / a, r = (2 / 3 * y) / a, s = -q - r;
+  let rq = Math.round(q), rr = Math.round(r), rs = Math.round(s);
+  const dq = Math.abs(rq - q), dr = Math.abs(rr - r), ds = Math.abs(rs - s);
+  if (dq > dr && dq > ds) rq = -rr - rs; else if (dr > ds) rr = -rq - rs;
+  return [rq, rr];
+}
+const hexCenter = (q, r, a) => [a * S3 * (q + r / 2), a * 1.5 * r];
+const HEX_DIRS = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+function hexCorners(cx, cy, a) {
+  const o = [];
+  for (let k = 0; k < 6; k++) { const t = (60 * k + 30) * Math.PI / 180; o.push([cx + a * Math.cos(t), cy + a * Math.sin(t)]); }
+  return o;
+}
+function insideHex(px, py, cx, cy, a, inset = 0) {
+  const dx = px - cx, dy = py - cy, ap = a * S3 / 2 - inset;
+  for (const t of [0, Math.PI / 3, 2 * Math.PI / 3]) if (Math.abs(dx * Math.cos(t) + dy * Math.sin(t)) > ap) return false;
+  return true;
+}
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+const bearing = (a, b) => (Math.atan2(b[0] - a[0], b[1] - a[1]) * 180 / Math.PI + 360) % 360;
+const angDiff = (a, b) => ((b - a) % 360 + 540) % 360 - 180;
+function samplePath(pts, step, fn) {
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const a = pts[i], b = pts[i + 1], d = dist(a, b), n = Math.max(1, Math.ceil(d / step));
+    for (let k = 0; k < n; k++) { const t = k / n; fn(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t); }
+  }
+  if (pts.length) fn(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+}
+function pickWeighted(items, w) {
+  let sum = 0; for (const it of items) sum += w(it);
+  if (sum <= 0) return items[Math.floor(Math.random() * items.length)];
+  let r = Math.random() * sum;
+  for (const it of items) { r -= w(it); if (r <= 0) return it; }
+  return items[items.length - 1];
+}
+const pct = v => Math.round(v * 100) + '%';
+
+// ---------------------------------------------------------------- データ
+let D = null;
+let FINE_A = 196, COARSE_A = 519;
+const cellKey = (q, r) => q + ',' + r;
+function cellObj(grid, a) {
+  const A = grid === 'fine' ? FINE_A : COARSE_A, [cx, cy] = hexCenter(a[0], a[1], A);
+  return { grid, id: grid[0] + a[0] + ',' + a[1], q: a[0], r: a[1], a: A, cx, cy, t: a[2], t2: a[3], reach: !!a[4],
+    town: a[5] >= 0 ? D.names[a[5]] : '', muni: a[6] >= 0 ? D.names[a[6]] : '', fr: a[7], e: a[8], len: a[9], c: a[10] };
+}
+function decodeLine(arr, off) {
+  const n = (arr.length - off) >> 1, p = new Float32Array(n * 2);
+  let x = 0, y = 0, x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (let i = 0; i < n; i++) {
+    x += arr[off + 2 * i]; y += arr[off + 2 * i + 1]; p[2 * i] = x; p[2 * i + 1] = y;
+    if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  return { p, b: [x0, y0, x1, y1] };
+}
+const GRID = 1000;
+function indexLines(list) {
+  const g = new Map();
+  for (const l of list) {
+    for (let gx = Math.floor(l.b[0] / GRID); gx <= Math.floor(l.b[2] / GRID); gx++)
+      for (let gy = Math.floor(l.b[1] / GRID); gy <= Math.floor(l.b[3] / GRID); gy++) {
+        const k = gx + ',' + gy; let a = g.get(k); if (!a) g.set(k, a = []); a.push(l);
+      }
+  }
+  return g;
+}
+function prepareData(raw) {
+  D = raw; FINE_A = D.meta.fineA; COARSE_A = D.meta.coarseA;
+  D.fineCells = D.fine.map(a => cellObj('fine', a));
+  D.coarseCells = D.coarse.map(a => cellObj('coarse', a));
+  D.fineMap = new Map(D.fineCells.map(c => [cellKey(c.q, c.r), c]));
+  D.coarseMap = new Map(D.coarseCells.map(c => [cellKey(c.q, c.r), c]));
+  D.R = {};
+  for (const k of ['A', 'B', 'C', 'D']) D.R[k] = D.roads[k].map(a => { const l = decodeLine(a, 1); l.st = a[0]; l.k = k; return l; });
+  D.L = {};
+  for (const k of ['rail', 'subway', 'river', 'stream']) D.L[k] = D.lines[k].map(a => decodeLine(a, 0));
+  D.idx = { C: indexLines(D.R.C), D: indexLines(D.R.D), stream: indexLines(D.L.stream) };
+  D.st = D.stations.map(s => ({ n: s[0], x: s[1], y: s[2], op: s[3] }));
+  D.pl = D.places.map(p => ({ n: p[0], x: p[1], y: p[2], rank: p[3] }));
+}
+const TYPES = ['住宅街', '商店のまち', '工場のまち', '田畑', '寺社のまち', '公園・緑地', '学び舎', '川沿い', '山際', '山あい'];
+const TYPE_COLORS = ['#9aa39d', '#c98b5a', '#8a86a6', '#b7b35a', '#b0706a', '#6fa06a', '#7d93b8', '#4f93b0', '#8d7a55', '#4d7a5a'];
+function cellAtFine(x, y) { const [q, r] = hexOf(x, y, FINE_A); return D.fineMap.get(cellKey(q, r)); }
+function cellAtCoarse(x, y) { const [q, r] = hexOf(x, y, COARSE_A); return D.coarseMap.get(cellKey(q, r)); }
+function placeName(c) { return c.town || c.muni || '名もない場所'; }
+
+// ---------------------------------------------------------------- 地図の描画
+// 端末の中の地図は「薄い線だけ」（pale）。操作盤の地図は地形の陰影つき（full）。
+const UI = { bg: '#FAFAF7', ink: '#161616', sub: '#9A9A96', line: '#DEDCD6', paper: '#F3EFE6', fold: '#D9D2C3', seal: '#B8432F', mark: '#E2A32E',
+  markSoft: 'rgba(226,163,46,.16)', trace: 'rgba(22,22,22,.14)', knownFill: 'rgba(22,22,22,.10)', simKnown: 'rgba(63,122,108,.30)', simKnownLine: '#3F7A6C' };
+const PAL = {
+  full: { bg: '#EDEFE9', road: '#FFFFFF', roadEdge: '#C9CEC7', major: '#FBF7EE', majorEdge: '#A9B1A9', foot: '#98A19B', rail: '#4F5857', river: '#8DB3BE', label: '#34403D', halo: 'rgba(250,250,247,.92)' },
+  pale: { bg: '#FAFAF7', road: '#DEDCD6', major: '#DEDCD6', foot: '#DEDCD6', rail: '#9A9A96', river: '#DEDCD6', label: '#9A9A96', halo: 'rgba(250,250,247,.95)' },
+};
+let baseImg = null;
+function loadBase() {
+  if (baseImg) return baseImg;
+  baseImg = new Image(); baseImg.decoding = 'async';
+  baseImg.onload = () => mapViews.forEach(v => v.request());
+  baseImg.src = 'base_light.jpg';
+  return baseImg;
+}
+const FONT = '"Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif';
+const mapViews = [];
+class MapView {
+  constructor(canvas, opts = {}) {
+    this.cv = canvas; this.ctx = canvas.getContext('2d'); this.opts = opts;
+    this.cx = 0; this.cy = 0; this.s = opts.scale || 0.12; this.mode = opts.mode || 'pan';
+    this.pointers = new Map(); this.w = 0; this.h = 0; this.raf = 0;
+    mapViews.push(this);
+    new ResizeObserver(() => this.resize()).observe(canvas);
+    canvas.addEventListener('pointerdown', e => this.down(e));
+    canvas.addEventListener('pointermove', e => this.move(e));
+    canvas.addEventListener('pointerup', e => this.up(e));
+    canvas.addEventListener('pointercancel', e => this.up(e, true));
+    canvas.addEventListener('wheel', e => { e.preventDefault(); const [wx, wy] = this.s2w(...this.local(e)); this.zoomAt(wx, wy, Math.exp(-e.deltaY * 0.0016)); }, { passive: false });
+  }
+  local(e) { const r = this.cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+  resize() {
+    const r = this.cv.getBoundingClientRect(); if (!r.width || !r.height) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    this.w = r.width; this.h = r.height; this.dpr = dpr;
+    this.cv.width = Math.round(r.width * dpr); this.cv.height = Math.round(r.height * dpr);
+    this.draw();
+  }
+  w2s(x, y) { return [this.w / 2 + (x - this.cx) * this.s, this.h / 2 - (y - this.cy) * this.s]; }
+  s2w(sx, sy) { return [this.cx + (sx - this.w / 2) / this.s, this.cy - (sy - this.h / 2) / this.s]; }
+  zoomAt(wx, wy, f) {
+    const s2 = clamp(this.s * f, this.opts.minScale || 0.004, this.opts.maxScale || 1.6);
+    const [sx, sy] = this.w2s(wx, wy);
+    this.s = s2; this.cx = wx - (sx - this.w / 2) / s2; this.cy = wy + (sy - this.h / 2) / s2;
+    this.userMoved = true; this.request();
+  }
+  setView(x, y, s) { this.cx = x; this.cy = y; if (s) this.s = s; this.request(); }
+  down(e) {
+    this.cv.setPointerCapture(e.pointerId);
+    const p = this.local(e); this.pointers.set(e.pointerId, p);
+    if (this.pointers.size === 1) {
+      this.start = { p, t: performance.now(), cx: this.cx, cy: this.cy, moved: false };
+      if (this.mode === 'draw') { this.stroke = [this.s2w(...p)]; this.request(); }
+    } else if (this.pointers.size === 2) {
+      this.stroke = null;
+      const [a, b] = [...this.pointers.values()];
+      this.pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), s: this.s, mid: this.s2w((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) };
+    }
+  }
+  move(e) {
+    if (!this.pointers.has(e.pointerId)) return;
+    const p = this.local(e); this.pointers.set(e.pointerId, p);
+    if (this.pointers.size === 1 && this.start) {
+      const dx = p[0] - this.start.p[0], dy = p[1] - this.start.p[1];
+      if (Math.hypot(dx, dy) > 5) this.start.moved = true;
+      if (this.mode === 'draw' && this.stroke) {
+        const w = this.s2w(...p), last = this.stroke[this.stroke.length - 1];
+        if (dist(w, last) * this.s > 3) { this.stroke.push(w); this.request(); }
+      } else if (this.start.moved) {
+        this.cx = this.start.cx - dx / this.s; this.cy = this.start.cy + dy / this.s; this.userMoved = true; this.request();
+      }
+    } else if (this.pointers.size === 2 && this.pinch) {
+      const [a, b] = [...this.pointers.values()];
+      const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      this.s = clamp(this.pinch.s * d / this.pinch.d, this.opts.minScale || 0.004, this.opts.maxScale || 1.6);
+      const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+      this.cx = this.pinch.mid[0] - (mx - this.w / 2) / this.s; this.cy = this.pinch.mid[1] + (my - this.h / 2) / this.s;
+      this.userMoved = true; this.request();
+    }
+  }
+  up(e, cancel) {
+    if (!this.pointers.has(e.pointerId)) return;
+    this.pointers.delete(e.pointerId);
+    if (this.pointers.size < 2) this.pinch = null;
+    if (this.pointers.size === 0) {
+      if (this.stroke && !cancel && this.mode === 'draw') { if (this.stroke.length > 1 && this.opts.onStroke) this.opts.onStroke(this.stroke); }
+      else if (this.start && !this.start.moved && !cancel && this.opts.onTap && performance.now() - this.start.t < 500) this.opts.onTap(this.s2w(...this.start.p));
+      this.stroke = null; this.start = null; this.request();
+    }
+  }
+  request() { if (!this.raf) this.raf = requestAnimationFrame(() => { this.raf = 0; this.draw(); }); }
+  inView(b, pad = 0) {
+    const [x0, y1] = this.s2w(-pad, -pad), [x1, y0] = this.s2w(this.w + pad, this.h + pad);
+    return !(b[2] < x0 || b[0] > x1 || b[3] < y0 || b[1] > y1);
+  }
+  gridLines(g) {
+    const [x0, y1] = this.s2w(0, 0), [x1, y0] = this.s2w(this.w, this.h), out = new Set();
+    for (let gx = Math.floor(x0 / GRID); gx <= Math.floor(x1 / GRID); gx++)
+      for (let gy = Math.floor(y0 / GRID); gy <= Math.floor(y1 / GRID); gy++) { const a = g.get(gx + ',' + gy); if (a) for (const l of a) out.add(l); }
+    return out;
+  }
+  path(list, filter) {
+    const c = this.ctx; c.beginPath();
+    const hw = this.w / 2, hh = this.h / 2, s = this.s, cx = this.cx, cy = this.cy;
+    for (const l of list) {
+      if (filter && !filter(l)) continue;
+      if (!this.inView(l.b, 20)) continue;
+      const p = l.p;
+      c.moveTo(hw + (p[0] - cx) * s, hh - (p[1] - cy) * s);
+      for (let i = 2; i < p.length; i += 2) c.lineTo(hw + (p[i] - cx) * s, hh - (p[i + 1] - cy) * s);
+    }
+  }
+  stroke_(list, color, width, dash, filter) {
+    const c = this.ctx; this.path(list, filter);
+    c.strokeStyle = color; c.lineWidth = width; c.setLineDash(dash || []); c.stroke(); c.setLineDash([]);
+  }
+  draw() {
+    if (!this.w || !D) return;
+    const c = this.ctx, s = this.s, pale = !!this.opts.pale, C = pale ? PAL.pale : PAL.full;
+    c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.fillStyle = C.bg; c.fillRect(0, 0, this.w, this.h);
+    if (pale) {
+      c.globalAlpha = 0.55; this.stroke_(D.L.river, C.river, Math.max(3, Math.min(10, 30 * s))); c.globalAlpha = 1;
+      if (s > 0.06) this.stroke_(this.gridLines(D.idx.stream), C.river, 1);
+      if (s > 0.16) this.stroke_(this.gridLines(D.idx.D), C.foot, 0.8, [2, 3]);
+      if (s > 0.035) this.stroke_(this.gridLines(D.idx.C), C.road, s > 0.09 ? 1.2 : 0.8);
+      this.stroke_(D.R.B, C.major, Math.max(1.6, Math.min(3, 12 * s)));
+      this.stroke_(D.R.A, C.major, Math.max(2.2, Math.min(4, 16 * s)));
+      this.stroke_(D.L.rail, C.rail, 1);
+    } else {
+      const img = loadBase();
+      if (img.complete && img.naturalWidth) {
+        const b = D.meta.base, [sx, sy] = this.w2s(b.x0, b.y1);
+        c.imageSmoothingEnabled = true; c.drawImage(img, sx, sy, (b.x1 - b.x0) * s, (b.y1 - b.y0) * s);
+      }
+      if (s > 0.045) this.stroke_(this.gridLines(D.idx.stream), C.river, Math.max(0.7, 3 * s));
+      this.stroke_(D.L.river, C.river, Math.max(1.1, Math.min(4, 14 * s)));
+      if (s > 0.1) this.stroke_(this.gridLines(D.idx.D), C.foot, Math.max(0.6, 1.6 * s), [Math.max(2, 5 * s), Math.max(2, 4 * s)]);
+      if (s > 0.035) {
+        const minor = this.gridLines(D.idx.C);
+        if (s > 0.09) this.stroke_(minor, C.roadEdge, Math.max(0.9, 7 * s) + 1.4);
+        this.stroke_(minor, C.road, Math.max(0.7, 7 * s));
+      }
+      this.stroke_(D.R.B, C.majorEdge, Math.max(1.3, 11 * s) + 1.6);
+      this.stroke_(D.R.A, C.majorEdge, Math.max(1.8, 15 * s) + 1.8);
+      this.stroke_(D.R.B, C.major, Math.max(1.0, 11 * s));
+      this.stroke_(D.R.A, C.major, Math.max(1.4, 15 * s));
+      const rw = Math.max(1.4, Math.min(4, 5 * s));
+      this.stroke_(D.L.rail, C.rail, rw);
+      if (s > 0.06) this.stroke_(D.L.rail, C.bg, rw * 0.45, [7, 7]);
+      if (s > 0.05) this.stroke_(D.L.subway, C.rail, 1, [2, 4]);
+    }
+    if (this.opts.underlay) this.opts.underlay(c, this);
+    this.labels(c, C, pale);
+    if (this.opts.overlay) this.opts.overlay(c, this);
+    if (this.stroke && this.mode === 'draw' && this.opts.drawStroke) this.opts.drawStroke(c, this, this.stroke);
+  }
+  labels(c, C, pale) {
+    const mode = this.opts.labels || 'all'; if (mode === 'none') return;
+    const s = this.s, occ = [];
+    const fits = (x, y, w, h) => { for (const o of occ) if (x < o[0] + o[2] && x + w > o[0] && y < o[1] + o[3] && y + h > o[1]) return false; occ.push([x, y, w, h]); return true; };
+    c.textBaseline = 'middle';
+    const text = (t, x, y, size, weight) => {
+      c.font = `${weight} ${size}px ${FONT}`;
+      const w = c.measureText(t).width;
+      if (x < -w || x > this.w + w || y < -20 || y > this.h + 20) return;
+      if (!fits(x - 2, y - size / 2 - 2, w + 4, size + 4)) return;
+      c.lineWidth = 3; c.strokeStyle = C.halo; c.strokeText(t, x, y); c.fillStyle = C.label; c.fillText(t, x, y);
+    };
+    if (s > 0.02) {
+      const seen = new Set();
+      for (const st of D.st) {
+        if (seen.has(st.n) && s < 0.2) continue; seen.add(st.n);
+        const [x, y] = this.w2s(st.x, st.y); if (x < -40 || x > this.w + 40 || y < -20 || y > this.h + 20) continue;
+        c.fillStyle = C.bg; c.strokeStyle = C.rail; c.lineWidth = pale ? 1 : 1.6;
+        c.beginPath(); c.arc(x, y, pale ? 2.6 : 3.2, 0, Math.PI * 2); c.fill(); c.stroke();
+        text(st.n, x + 6, y, 11, pale ? 400 : 700);
+      }
+    }
+    if (mode === 'all') {
+      for (const p of D.pl) {
+        const need = [0.003, 0.012, 0.03, 0.08, 0.2][p.rank];
+        if (s < need) continue;
+        const [x, y] = this.w2s(p.x, p.y);
+        text(p.n, x - 12, y, p.rank <= 1 ? 13 : 11, pale ? 400 : (p.rank <= 1 ? 700 : 500));
+      }
+    }
+  }
+}
+function drawHex(c, v, cx, cy, a, fill, stroke, lw, dash) {
+  const pts = hexCorners(cx, cy, a); c.beginPath();
+  pts.forEach((p, i) => { const [x, y] = v.w2s(p[0], p[1]); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.closePath();
+  if (fill) { c.fillStyle = fill; c.fill(); }
+  if (stroke) { c.strokeStyle = stroke; c.lineWidth = lw || 1; c.setLineDash(dash || []); c.stroke(); c.setLineDash([]); }
+}
+// 端末の中では小さな点と名前だけ。操作盤ではピン。
+function drawPin(c, v, x, y, label, color, quiet) {
+  const [sx, sy] = v.w2s(x, y);
+  c.font = `${quiet ? 400 : 700} 12px ${FONT}`; c.textBaseline = 'middle';
+  if (quiet) {
+    c.fillStyle = color; c.beginPath(); c.arc(sx, sy, 4, 0, Math.PI * 2); c.fill();
+    if (label) { c.lineWidth = 3; c.strokeStyle = PAL.pale.halo; c.strokeText(label, sx + 9, sy); c.fillStyle = color; c.fillText(label, sx + 9, sy); }
+    return;
+  }
+  c.fillStyle = color; c.beginPath(); c.arc(sx, sy - 14, 8, Math.PI * 0.85, Math.PI * 0.15); c.lineTo(sx, sy); c.closePath(); c.fill();
+  c.fillStyle = UI.bg; c.beginPath(); c.arc(sx, sy - 14, 3.2, 0, Math.PI * 2); c.fill();
+  if (label) { c.lineWidth = 3; c.strokeStyle = PAL.full.halo; c.strokeText(label, sx + 11, sy - 14); c.fillStyle = UI.ink; c.fillText(label, sx + 11, sy - 14); }
+}
+function drawStrokeWide(c, v, pts, color, meters) {
+  c.beginPath(); pts.forEach((p, i) => { const [x, y] = v.w2s(p[0], p[1]); i ? c.lineTo(x, y) : c.moveTo(x, y); });
+  c.strokeStyle = color; c.lineWidth = Math.max(4, meters * v.s); c.lineCap = 'round'; c.lineJoin = 'round'; c.stroke();
+}
+
+// ---------------------------------------------------------------- 道のグラフと経路
+let G = null;
+function buildGraph() {
+  if (G) return G;
+  const t0 = performance.now();
+  const ids = new Map(), X = [], Y = [], adj = [];
+  const node = (x, y) => {
+    const k = Math.round(x) * 131072 + Math.round(y);
+    let i = ids.get(k); if (i === undefined) { i = X.length; ids.set(k, i); X.push(x); Y.push(y); adj.push([]); }
+    return i;
+  };
+  for (const k of ['A', 'B', 'C', 'D']) for (const l of D.R[k]) {
+    const p = l.p; let prev = node(p[0], p[1]);
+    for (let i = 2; i < p.length; i += 2) {
+      const cur = node(p[i], p[i + 1]); if (cur === prev) continue;
+      const d = Math.hypot(p[i] - p[i - 2], p[i + 1] - p[i - 1]), st = l.st ? 1 : 0;
+      adj[prev].push(cur, d, st); adj[cur].push(prev, d, st); prev = cur;
+    }
+  }
+  const cells = new Map();
+  for (let i = 0; i < X.length; i++) { const k = Math.floor(X[i] / 250) + ',' + Math.floor(Y[i] / 250); let a = cells.get(k); if (!a) cells.set(k, a = []); a.push(i); }
+  G = { X, Y, adj, cells, n: X.length };
+  console.log('graph', G.n, 'nodes', Math.round(performance.now() - t0) + 'ms');
+  return G;
+}
+function nearestNode(x, y) {
+  const g = buildGraph(), gx = Math.floor(x / 250), gy = Math.floor(y / 250);
+  let best = -1, bd = Infinity;
+  for (let r = 0; r < 12; r++) {
+    for (let i = gx - r; i <= gx + r; i++) for (let j = gy - r; j <= gy + r; j++) {
+      if (Math.max(Math.abs(i - gx), Math.abs(j - gy)) !== r) continue;
+      const a = g.cells.get(i + ',' + j); if (!a) continue;
+      for (const n of a) { const d = Math.hypot(g.X[n] - x, g.Y[n] - y); if (d < bd) { bd = d; best = n; } }
+    }
+    if (best >= 0 && bd < r * 250) break;
+  }
+  return best;
+}
+class Heap {
+  constructor() { this.a = []; }
+  push(n, f) { const a = this.a; a.push([f, n]); let i = a.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (a[p][0] <= a[i][0]) break; [a[p], a[i]] = [a[i], a[p]]; i = p; } }
+  pop() { const a = this.a, top = a[0], last = a.pop(); if (a.length) { a[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < a.length && a[l][0] < a[m][0]) m = l; if (r < a.length && a[r][0] < a[m][0]) m = r; if (m === i) break; [a[m], a[i]] = [a[i], a[m]]; i = m; } } return top; }
+  get size() { return this.a.length; }
+}
+function route(from, to, opts = {}) {
+  const g = buildGraph();
+  const s = nearestNode(from[0], from[1]), t = nearestNode(to[0], to[1]);
+  if (s < 0 || t < 0) return [from, to];
+  const gs = new Float64Array(g.n).fill(Infinity), came = new Int32Array(g.n).fill(-1), done = new Uint8Array(g.n);
+  const h = n => Math.hypot(g.X[n] - g.X[t], g.Y[n] - g.Y[t]);
+  const heap = new Heap(); gs[s] = 0; heap.push(s, h(s));
+  let steps = 0;
+  while (heap.size && steps < 600000) {
+    const [, n] = heap.pop(); if (done[n]) continue; done[n] = 1; steps++;
+    if (n === t) break;
+    const A = g.adj[n];
+    for (let i = 0; i < A.length; i += 3) {
+      const m = A[i]; if (done[m]) continue;
+      if (opts.noSteps && A[i + 2]) continue;
+      const ng = gs[n] + A[i + 1];
+      if (ng < gs[m]) { gs[m] = ng; came[m] = n; heap.push(m, ng + h(m)); }
+    }
+  }
+  if (!done[t]) return [from, to];
+  const out = []; for (let n = t; n >= 0; n = came[n]) out.push([g.X[n], g.Y[n]]);
+  out.reverse(); out.unshift(from.slice());
+  if (opts.toExact) out.push(to.slice());
+  return out;
+}
+
+// ---------------------------------------------------------------- 知っている範囲
+const K = { strokes: [], places: [], placePaths: [], walked: [], set: new Set(), coarseCount: new Map() };
+const HOME = [0, 0];
+const BRUSH = 45;
+function loadKnown() {
+  K.strokes = store.get('strokes', []); K.places = store.get('places', []); K.placePaths = store.get('placePaths', []); K.walked = store.get('walked', []);
+}
+function saveKnown() { store.set('strokes', K.strokes); store.set('places', K.places); store.set('placePaths', K.placePaths); store.set('walked', K.walked); }
+function recomputeKnown() {
+  const set = new Set();
+  const add = (x, y) => { const [q, r] = hexOf(x, y, FINE_A); set.add(cellKey(q, r)); };
+  const brush = (x, y, rad) => { add(x, y); for (let k = 0; k < 6; k++) { const t = k * Math.PI / 3; add(x + rad * Math.cos(t), y + rad * Math.sin(t)); } };
+  for (const st of K.strokes) samplePath(st, 20, (x, y) => brush(x, y, BRUSH));
+  for (const p of [{ x: HOME[0], y: HOME[1] }, ...K.places]) {
+    const [q, r] = hexOf(p.x, p.y, FINE_A); set.add(cellKey(q, r));
+    for (const [dq, dr] of HEX_DIRS) set.add(cellKey(q + dq, r + dr));
+  }
+  for (const path of K.placePaths) samplePath(path, 20, (x, y) => brush(x, y, 30));
+  for (const id of K.walked) set.add(id);
+  K.set = set;
+  K.coarseCount = new Map();
+  for (const id of set) {
+    const [q, r] = id.split(',').map(Number), [x, y] = hexCenter(q, r, FINE_A), [cq, cr] = hexOf(x, y, COARSE_A), k = cellKey(cq, cr);
+    K.coarseCount.set(k, (K.coarseCount.get(k) || 0) + 1);
+  }
+  K.profile = knownProfile();
+}
+function knownProfile() {
+  const cnt = new Array(TYPES.length).fill(0); let n = 0;
+  for (const id of K.set) {
+    const [q, r] = id.split(',').map(Number);
+    let c = D.fineMap.get(id);
+    if (!c) { const [x, y] = hexCenter(q, r, FINE_A); c = cellAtCoarse(x, y); }
+    if (!c) continue; cnt[c.t]++; n++;
+  }
+  return { share: cnt.map(v => n ? v / n : 0), n };
+}
+function profileText(p = K.profile) {
+  return TYPES.map((t, i) => [t, p.share[i]]).filter(a => a[1] >= 0.04).sort((a, b) => b[1] - a[1]).map(a => `${a[0]} ${pct(a[1])}`).join('、');
+}
+function unknownness(c) {
+  if (c.grid === 'fine') return K.set.has(cellKey(c.q, c.r)) ? 0 : 1;
+  const n = K.coarseCount.get(cellKey(c.q, c.r)) || 0;
+  return n === 0 ? 1 : n === 1 ? 0.6 : 0;
+}
+
+// 例（体験版の既定の生活圏）
+// 指で塗りつぶしたようなジグザグ（中心・幅・高さ・往復の数）
+function zig(cx, cy, w, h, n, tilt = 0) {
+  const pts = [];
+  for (let i = 0; i <= n; i++) {
+    const y = cy + h / 2 - h * i / n, j = Math.sin(i * 2.3) * w * 0.08, side = i % 2 ? 1 : -1;
+    pts.push([Math.round(cx + side * w / 2 + j + tilt * (y - cy)), Math.round(y)]);
+  }
+  return pts;
+}
+const EXAMPLE_STROKES = [
+  zig(40, 20, 760, 620, 7, 0.15),            // 家のまわり
+  zig(-470, -560, 300, 260, 4),              // スーパーのあたり
+  [[300, -80], [320, -420], [335, -760], [330, -960]],   // 白川通を本屋まで
+  [[-180, -260], [-330, -560], [-470, -900], [-540, -1300], [-590, -1700], [-570, -1950]],  // 大学への道
+  zig(-560, -2080, 520, 380, 5),             // 大学
+];
+const EXAMPLE_PLACE_NAMES = ['吉田本町', '北白川伊織町'];   // 大学・本屋のあたり
+
+// ---------------------------------------------------------------- 行き先を選ぶ（未知かどうかだけで選ぶ。良し悪しは見ない）
+const SPEED = { walk: 75, bike: 250 };           // m/分
+const DETOUR = 1.25;                             // 道なりの遠回り（直線距離 × 1.25 = 道のり）
+// 到達範囲（道のり）: 〜20分＝徒歩1.5km／自転車5km、〜45分＝3.5km／12km、〜90分＝7km／25km。候補は直線距離で持つ。
+const REACH = { walk: { 20: 1500, 45: 3500, 90: 7000 }, bike: { 20: 5000, 45: 12000, 90: 25000 } };
+const BAND = {};
+for (const m of ['walk', 'bike']) {
+  const r = b => REACH[m][b] / DETOUR;
+  BAND[m] = { 20: [r(20) * 0.35, r(20)], 45: [r(20) * 0.8, r(45)], 90: [r(45) * 0.8, r(90)] };
+}
+const NIGHT_EXCLUDE = [3, 5, 7, 8, 9];
+function isNight() { const h = sim.time.getHours(); return h >= 19 || h < 6; }
+function novelty(t) { return 1 - (K.profile ? K.profile.share[t] : 0); }
+function scoreCell(c, d, maxD, sparse) {
+  const u = unknownness(c); if (u <= 0) return 0;
+  return u * (0.35 + 1.65 * novelty(c.t)) * (sparse ? 0.5 + d / maxD : 1);
+}
+function gatherCandidates({ grid, from, minD, maxD, dir = null, dirTol = 180 }) {
+  const cells = grid === 'fine' ? D.fineCells : D.coarseCells, out = [];
+  const night = isNight();
+  for (const c of cells) {
+    if (!c.reach) continue;
+    if (night && NIGHT_EXCLUDE.includes(c.t)) continue;
+    const d = Math.hypot(c.cx - from[0], c.cy - from[1]); if (d < minD || d > maxD) continue;
+    if (dir != null && Math.abs(angDiff(dir, bearing(from, [c.cx, c.cy]))) > dirTol) continue;
+    if (unknownness(c) <= 0) continue;
+    out.push({ c, d });
+  }
+  return out;
+}
+function selectArea(cond, from = HOME, extra = {}) {
+  const [lo, hi] = BAND[cond.mode][cond.bucket];
+  const grid = cond.bucket === 20 ? 'fine' : 'coarse';
+  const sparse = K.profile.n < 30;
+  let minD = sparse ? Math.max(lo, hi * 0.55) : lo, maxD = hi, cands = [], widened = 0;
+  for (let i = 0; i < 4 && !cands.length; i++) {
+    cands = gatherCandidates({ grid, from, minD, maxD, ...extra });
+    if (!cands.length) { maxD *= 1.15; widened++; }
+  }
+  if (!cands.length) return null;
+  const pick = pickWeighted(cands, o => scoreCell(o.c, o.d, maxD, sparse));
+  return { cell: pick.c, d: pick.d, grid, cands: cands.map(o => o.c), minD, maxD, widened, sparse };
+}
+function areaMinutes(d, mode) { return Math.max(3, Math.round(d * DETOUR / SPEED[mode])); }
+
+// ---------------------------------------------------------------- 電車（シナリオ）
+const LINES = {
+  down: { stops: ['一乗寺', '茶山・京都芸術大学', '元田中', '出町柳'], op: '叡山', hop: 2, pl: '1' },
+  yase: { stops: ['一乗寺', '修学院', '宝ヶ池', '三宅八幡', '八瀬比叡山口'], op: '叡山', hop: 2, pl: '2' },
+  kurama: { stops: ['一乗寺', '修学院', '宝ヶ池', '八幡前', '岩倉', '木野', '京都精華大前', '二軒茶屋', '市原', '二ノ瀬', '貴船口', '鞍馬'], op: '叡山', hop: 2.3, pl: '2' },
+  keihan: { stops: ['出町柳', '神宮丸太町', '三条', '祇園四条', '清水五条', '七条', '東福寺', '鳥羽街道', '伏見稲荷', '深草', '藤森', '墨染', '丹波橋', '伏見桃山', '中書島', '淀', '石清水八幡宮', '橋本', '樟葉'], op: '京阪', hop: 2.3, pl: '3' },
+};
+function stationXY(name, op, near) {
+  const c = D.st.filter(s => s.n === name);
+  if (!c.length) return null;
+  c.sort((a, b) => ((b.op || '').includes(op) - (a.op || '').includes(op)) || (near ? Math.hypot(a.x - near[0], a.y - near[1]) - Math.hypot(b.x - near[0], b.y - near[1]) : 0));
+  return [c[0].x, c[0].y];
+}
+function resolveLines() {
+  for (const L of Object.values(LINES)) {
+    L.xy = []; let prev = null;
+    L.stops.forEach((n, i) => { const p = stationXY(n, L.op, prev); L.xy.push(p); if (p) prev = p; });
+    for (let i = 0; i < L.xy.length; i++) if (!L.xy[i]) {
+      const a = L.xy[i - 1], b = L.xy[i + 1];
+      L.xy[i] = a && b ? [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] : (a || b || [0, 0]).slice();
+    }
+  }
+}
+const MIN_RIDE = { 20: 4, 45: 16, 90: 38 };
+function tripOptions() {
+  const opts = [];
+  for (const key of ['yase', 'kurama', 'down']) {
+    const L = LINES[key];
+    for (let i = 1; i < L.stops.length; i++) {
+      if (key === 'kurama' && i <= 2) continue;
+      opts.push({ legs: [{ line: key, from: 0, to: i }], ride: i * L.hop, stop: L.xy[i], name: L.stops[i] });
+    }
+  }
+  const dn = LINES.down, kh = LINES.keihan;
+  for (let j = 1; j < kh.stops.length; j++) opts.push({ legs: [{ line: 'down', from: 0, to: 3 }, { line: 'keihan', from: 0, to: j }], ride: 3 * dn.hop + 6 + j * kh.hop, stop: kh.xy[j], name: kh.stops[j] });
+  return opts;
+}
+function selectTransit(bucket, only = null) {
+  const grid = bucket === 20 ? 'fine' : 'coarse', A = grid === 'fine' ? FINE_A : COARSE_A;
+  const pool = [];
+  const opts = only || tripOptions().filter(o => o.ride + 4 <= bucket && o.ride >= MIN_RIDE[bucket]);
+  for (const o of opts) {
+    const cands = gatherCandidates({ grid, from: o.stop, minD: A * 0.9, maxD: A * (grid === 'fine' ? 2.6 : 2.0) });
+    for (const x of cands) {
+      const total = o.ride + 4 + areaMinutes(x.d, 'walk');
+      if (!only && total > bucket) continue;
+      pool.push({ o, c: x.c, d: x.d, total });
+    }
+  }
+  if (!pool.length) return null;
+  const pick = pickWeighted(pool, p => scoreCell(p.c, p.d, 1, false));
+  return { cell: pick.c, trip: pick.o, total: pick.total, d: pick.d, grid, cands: pool.map(p => p.c) };
+}
+
+// ---------------------------------------------------------------- 封筒（ヒント）
+// 端末の外に出すのは「行き先の土地のデータ」だけ。候補の中から、この人が普段接していない種類を端末の中で選ぶ。
+const KINDS = ['水', '坂・高低', '山・森', '田畑', '工場・倉庫', '店・看板', '寺社・祈り', '公園・木', '学校', '家並み・路地', '線路', '色・形・音'];
+const KIND_TYPE = { '水': 7, '坂・高低': 8, '山・森': 9, '田畑': 3, '工場・倉庫': 2, '店・看板': 1, '寺社・祈り': 4, '公園・木': 5, '学校': 6, '家並み・路地': 0, '線路': -1, '色・形・音': -1 };
+function kindNovelty(kind) { const t = KIND_TYPE[kind]; return t == null || t < 0 ? 0.85 : 0.35 + novelty(t); }
+function cellSignals(c) {
+  const f = i => (c.fr[i] || 0) / 100, sc = c.grid === 'fine' ? 1 : 5;
+  const n = i => c.c[i] || 0;
+  return {
+    res: f(0), com: f(1), ind: f(2), farm: f(3), rel: f(4), park: f(5), campus: f(6), forest: f(7), water: f(8),
+    elev: c.e[0], range: c.e[1], slope: c.e[2] / 10,
+    river: Math.min(1, (c.len[0] + c.len[1]) / (250 * sc)), stream: Math.min(1, c.len[2] / (150 * sc)), rail: Math.min(1, c.len[3] / (200 * sc)),
+    steps: Math.min(1, n(3) / (2 * sc)), track: Math.min(1, n(4) / (3 * sc)), bridge: Math.min(1, n(5) / (2 * sc)),
+    shops: Math.min(1, (n(6) + n(7)) / (12 * sc)), pow: Math.min(1, n(8) / (3 * sc)), shrine: Math.min(1, n(10) / sc), bath: n(14) > 0 ? 1 : 0,
+    spring: n(17) > 0 ? 1 : 0, tree: n(18) > 0 ? 1 : 0, chimney: Math.min(1, n(20) / sc), mountain: c.t === 9 ? 1 : 0, dense: Math.min(1, n(1) / (25 * sc)),
+  };
+}
+const VOCAB = [
+  ['水の音', '水', s => s.river * 0.9 + s.stream * 0.8],
+  ['橋の下', '水', s => s.river * 0.5 + s.bridge * 0.3],
+  ['飛び石', '水', s => s.river * 0.3],
+  ['鷺', '水', s => s.river * 0.4 + s.farm * 0.4],
+  ['水門', '水', s => s.river * 0.25 + s.farm * 0.2],
+  ['沢の音', '山・森', s => s.stream * s.forest * 1.2 + s.mountain * 0.3],
+  ['坂の上', '坂・高低', s => Math.min(1, s.range / 40) * 1.0],
+  ['石段', '坂・高低', s => Math.min(1, s.range / 40) * 0.5 + s.steps * 0.5 + s.pow * 0.2],
+  ['見下ろす屋根', '坂・高低', s => Math.min(1, s.range / 50) * s.res * 1.2],
+  ['石垣', '坂・高低', s => Math.min(1, s.range / 40) * 0.35 + s.mountain * 0.4],
+  ['苔', '山・森', s => s.forest * 0.35 + s.rel * 0.5],
+  ['竹林', '山・森', s => s.forest * Math.min(1, s.range / 40) * 0.8 + s.farm * 0.15],
+  ['獣よけの柵', '山・森', s => s.mountain * 0.6 + s.farm * s.forest * 1.5],
+  ['積まれた薪', '山・森', s => s.mountain * 0.5],
+  ['湧き水', '水', s => s.spring * 0.6 + s.forest * Math.min(1, s.range / 50) * 0.3],
+  ['畦道', '田畑', s => s.farm * 1.1],
+  ['案山子', '田畑', s => s.farm * 0.6],
+  ['無人販売所', '田畑', s => s.farm * 0.8],
+  ['用水路', '田畑', s => s.farm * 0.5 + s.stream * 0.3],
+  ['煙突', '工場・倉庫', s => s.ind * 0.8 + s.chimney * 0.4],
+  ['錆びた扉', '工場・倉庫', s => s.ind * 0.7],
+  ['倉庫の番号', '工場・倉庫', s => s.ind * 0.5],
+  ['手書きの貼り紙', '店・看板', s => s.com * 0.6 + s.shops * 0.4],
+  ['古い看板', '店・看板', s => s.com * 0.5 + s.shops * 0.3 + s.res * 0.1],
+  ['のれん', '店・看板', s => s.shops * 0.5],
+  ['地蔵', '寺社・祈り', s => s.res * 0.5 + s.rel * 0.3 + s.shrine * 0.5],
+  ['小さな祠', '寺社・祈り', s => s.res * 0.25 + s.rel * 0.3 + s.mountain * 0.3],
+  ['鳥居', '寺社・祈り', s => s.rel * 0.5 + s.pow * 0.3],
+  ['鐘の音', '寺社・祈り', s => s.rel * 0.5 + s.pow * 0.2],
+  ['土塀', '寺社・祈り', s => s.rel * 0.5],
+  ['大きな木', '公園・木', s => s.park * 0.6 + s.rel * 0.3 + s.tree * 0.3],
+  ['藤棚', '公園・木', s => s.park * 0.5],
+  ['ベンチ', '公園・木', s => s.park * 0.35],
+  ['立て看板', '学校', s => s.campus * 0.8],
+  ['古本', '学校', s => s.campus * 0.4 + s.com * 0.2],
+  ['路地', '家並み・路地', s => s.res * 0.7 * (0.5 + s.dense)],
+  ['井戸', '家並み・路地', s => s.res * 0.3],
+  ['植木鉢の列', '家並み・路地', s => s.res * 0.6],
+  ['格子戸', '家並み・路地', s => s.res * 0.35 + s.com * 0.2],
+  ['鬼瓦', '家並み・路地', s => s.res * 0.3 + s.rel * 0.3],
+  ['行き止まり', '家並み・路地', s => s.res * 0.4],
+  ['猫', '家並み・路地', s => s.res * 0.4],
+  ['銭湯の煙突', '家並み・路地', s => s.bath * 0.7],
+  ['踏切', '線路', s => s.rail * 0.8],
+  ['線路沿いの花', '線路', s => s.rail * 0.4],
+  ['赤いもの', '色・形・音', () => 0.12],
+  ['丸い窓', '色・形・音', () => 0.08],
+  ['古いポスト', '色・形・音', () => 0.1],
+  ['風の通り道', '色・形・音', () => 0.08],
+];
+function ruleHint(c) {
+  const s = cellSignals(c);
+  const items = VOCAB.map(([w, kind, f]) => ({ w, kind, v: Math.max(0, f(s)) * kindNovelty(kind) })).filter(i => i.v > 0.02);
+  items.sort((a, b) => b.v - a.v);
+  const top = items.slice(0, 6);
+  return pickWeighted(top, i => i.v * i.v);
+}
+function describeCell(c) {
+  const fr = D.meta.featF.map((n, i) => [n, c.fr[i]]).filter(a => a[1] >= 5).map(a => `${a[0]} ${a[1]}%`).join('、') || '特に目立つ区分なし';
+  const cnt = D.meta.featC.map((n, i) => [n, c.c[i]]).filter(a => a[1] > 0).map(a => `${a[0]} ${a[1]}`).join('、') || 'なし';
+  const size = c.grid === 'fine' ? '約0.1km²（数ブロック）' : '約0.7km²（ひとつの町ほど）';
+  return [
+    `広さ: ${size}`,
+    `環境のおおまかな種類: ${TYPES[c.t]}（次点: ${TYPES[c.t2]}）`,
+    `標高: 平均${c.e[0]}m、区画内の高低差${c.e[1]}m、平均傾斜${(c.e[2] / 10).toFixed(1)}度`,
+    `土地の割合: ${fr}`,
+    `川・水路の長さ: 川${c.len[0]}m、運河・疏水${c.len[1]}m、小川${c.len[2]}m／線路${c.len[3]}m`,
+    `地図データに載っているものの数: ${cnt}`,
+  ].join('\n');
+}
+function hintPrompt(c) {
+  return `あなたは散歩アプリ「みちみち」の封筒の中身を考える係です。
+利用者は今日、自分にとって未知のエリアへ向かっています。到着してから開ける封筒に、そのエリアで「探す口実」になるものを入れます。
+
+次は、行き先エリアの土地のデータです（京都周辺の実在の区画。名前は伏せています）。
+${describeCell(c)}
+
+このデータから、その土地に「ありそうだが確実ではないもの」を、施設データに載らない感覚的なものを中心に推定し、候補を5つ出してください。
+- それぞれ、探す対象のカテゴリを表す1語（例: 神社／坂の上／水の音）
+- 固有名詞・地名・施設名は含めない
+- 評価語（きれい、おすすめ、素敵、有名、絶景 など）は含めない
+- 2〜7文字程度。命令や説明の文にしない
+- 地図データで数が確実に分かるもの（例: 店が20軒あるなら「店」）は避け、推定が必要なものにする
+- kind は次から1つ: ${KINDS.join('／')}
+
+JSONだけで答えてください: {"candidates":[{"word":"…","kind":"…"}, …]}`;
+}
+const BAD_WORD = /(きれい|綺麗|美し|素敵|すてき|ステキ|おすすめ|オススメ|最高|有名|人気|絶景|映え|癒|楽し|感動|名所)/;
+function okWord(w, c) {
+  if (typeof w !== 'string') return false; w = w.trim();
+  if (!w || w.length > 9 || /[\s、。,.!！?？「」『』（）()]/.test(w) || BAD_WORD.test(w)) return false;
+  if (c.town && (w.includes(c.town) || c.town.includes(w))) return false;
+  return true;
+}
+let samplePromise = null;
+function getSample() {
+  if (!samplePromise) samplePromise = (window.claude && window.claude.use) ? window.claude.use('sample').catch(() => null) : Promise.resolve(null);
+  return samplePromise;
+}
+async function makeHint(c) {
+  const env = { word: null, source: null, pending: true };
+  const fallback = () => { const h = ruleHint(c); env.word = h.w; env.kind = h.kind; env.source = 'rule'; env.pending = false; };
+  try {
+    const sample = await Promise.race([getSample(), new Promise(r => setTimeout(() => r(null), 2500))]);
+    if (!sample) { fallback(); return env; }
+    log('封筒の中身を、Claudeに考えてもらっています。送るのは行き先の土地のデータだけです。', 'ai');
+    const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 25000);
+    const res = await sample.json(hintPrompt(c), { modelTier: 'quick', cache: false, signal: ctl.signal });
+    clearTimeout(timer);
+    const list = (res && Array.isArray(res.candidates) ? res.candidates : []).filter(x => x && okWord(x.word, c) && KINDS.includes(x.kind));
+    if (!list.length) throw { code: 'empty' };
+    const pick = pickWeighted(list, x => kindNovelty(x.kind) ** 2);
+    env.word = pick.word.trim(); env.kind = pick.kind; env.source = 'claude'; env.cands = list.map(x => x.word); env.pending = false;
+  } catch (e) {
+    fallback(); env.error = e && e.code;
+  }
+  return env;
+}
+
+// ---------------------------------------------------------------- シミュレーション（体験版だけの世界）
+const sim = {
+  time: new Date(), speed: 30, pos: [0, 0], heading: 20, trail: [], mode: 'walk',
+  route: null, routeIdx: 0, routeKind: null, fwd: false, turn: 0, running: false, follow: true,
+};
+function dayStart(d = new Date()) { const t = new Date(d); t.setHours(10, 0, 0, 0); return t; }
+const fmtTime = d => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+const WEEK = ['日', '月', '火', '水', '木', '金', '土'];
+
+// 今日の外出
+let trip = null;
+function newTrip(cond, sel) {
+  const c = sel.cell;
+  trip = {
+    cond, cell: c, area: { cx: c.cx, cy: c.cy, a: c.a }, cands: sel.cands, sel,
+    departAt: null, arrivedAt: null, phase: 'ready', env: null, best: Infinity, d0: sel.d || 0,
+    inside: 0, recalcAt: 0, transit: sel.trip ? planTransit(sel.trip) : null, warned: false, bikeTrail: [],
+  };
+  trip.envPromise = makeHint(c).then(env => { trip && trip.cell === c && (trip.env = env); onEnvReady(env, c); return env; });
+}
+function onEnvReady(env, c) {
+  if (!trip || trip.cell !== c) return;
+  if (env.source === 'claude') log(`封筒の用意ができました。Claudeが土地のデータから挙げた候補（${env.cands.join('、')}）のうち、あなたが普段接していない種類のものを端末の中で1つ選びました。中身は着くまで伏せています。`, 'ai');
+  else log(`封筒の用意ができました。${env.error ? 'Claudeに届かなかったため、' : 'この閲覧環境ではClaudeを呼べないため、'}制作時にAIと作った語彙から、土地のデータに合う候補を選びました（普段接していない種類を優先）。中身は着くまで伏せています。`, 'ai');
+  refreshSimMap();
+}
+function planTransit(o) {
+  const t0 = new Date(sim.time.getTime());
+  const dep = new Date(t0.getTime() + (4 + Math.floor(Math.random() * 4)) * 60000); dep.setSeconds(0, 0);
+  const legs = []; let t = dep;
+  o.legs.forEach((lg, i) => {
+    const L = LINES[lg.line];
+    const leg = { line: lg.line, from: lg.from, to: lg.to, dep: new Date(t), hop: L.hop, pl: L.pl, first: i === 0 };
+    legs.push(leg);
+    const arr = new Date(t.getTime() + (lg.to - lg.from) * L.hop * 60000);
+    t = new Date(arr.getTime() + (5 + Math.floor(Math.random() * 3)) * 60000); t.setSeconds(0, 0);
+  });
+  return { legs, legIdx: 0, stopIdx: 0, state: 'wait', name: o.name, stop: o.stop, wrong: false };
+}
+
+// ---------------------------------------------------------------- 画面
+const screens = {};
+$$('.scr').forEach(s => screens[s.dataset.s] = s);
+let current = null;
+const MARK_SCREENS = ['calc', 'compass'];
+function show(name) {
+  for (const [k, el] of Object.entries(screens)) el.hidden = k !== name;
+  current = name;
+  $('#markLayer').hidden = !MARK_SCREENS.includes(name);
+  if (name !== 'compass' && name !== 'platform') $('#phoneMap').hidden = true;
+  renderCtrl();
+  requestAnimationFrame(() => mapViews.forEach(v => v.resize()));
+}
+function buzz() {
+  try { navigator.vibrate && navigator.vibrate(80); } catch (e) {}
+  const d = $('#device'); d.classList.remove('buzz'); void d.offsetWidth; d.classList.add('buzz');
+}
+const MODE_J = { walk: '徒歩', bike: '自転車', transit: '公共交通' };
+
+// ---- 0 起動：ロゴが1.2秒。消えるとき「！」だけが残って少し回り、次の画面へ
+const LOGO_RING = [144.655, 41.88];   // ロゴのマークのリングの中心（SVG座標）
+function runSplash(next) {
+  show('splash');
+  const sp = screens.splash, mark = $('.s-splash .logo-mark');
+  sp.classList.remove('fade'); mark.removeAttribute('transform');
+  setTimeout(() => {
+    sp.classList.add('fade');
+    const t0 = performance.now();
+    const turn = now => {
+      const k = Math.min(1, (now - t0) / 900), e = 1 - Math.pow(1 - k, 3);
+      mark.setAttribute('transform', `rotate(${(e * 28).toFixed(2)} ${LOGO_RING[0]} ${LOGO_RING[1]})`);
+      if (k < 1 && current === 'splash') requestAnimationFrame(turn);
+    };
+    requestAnimationFrame(turn);
+    setTimeout(next, 1150);
+  }, 1200);
+}
+
+// ---- 00 はじめに
+let traceView, phoneView, simView;
+$$('[data-tmode]').forEach(b => b.onclick = () => {
+  $$('[data-tmode]').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+  traceView.mode = b.dataset.tmode;
+});
+$('#traceUndo').onclick = () => { K.strokes.pop(); saveKnown(); recomputeKnown(); traceView.request(); refreshSimMap(); };
+$('#traceExample').onclick = () => { K.strokes = EXAMPLE_STROKES.map(s => s.map(p => p.slice())); saveKnown(); recomputeKnown(); traceView.setView(-150, -800, 0.12); refreshSimMap(); };
+$('#traceNext').onclick = () => { show('places'); fillPlaceInputs(); };
+
+// 00-b 自宅とよく行く場所：町名か駅名で入力（体験版の地図データにある名前で位置を引く）
+let NAMES = new Map();
+function buildNameIndex() {
+  const acc = new Map();
+  for (const c of D.fineCells) if (c.town && Math.hypot(c.cx, c.cy) < 7000) {
+    let a = acc.get(c.town); if (!a) acc.set(c.town, a = [0, 0, 0]); a[0] += c.cx; a[1] += c.cy; a[2]++;
+  }
+  NAMES = new Map([...acc].map(([n, a]) => [n, [a[0] / a[2], a[1] / a[2]]]));
+  for (const s of D.st) if (Math.hypot(s.x, s.y) < 8000 && !NAMES.has(s.n + '駅')) NAMES.set(s.n + '駅', [s.x, s.y]);
+  const dl = $('#nameList'); dl.textContent = '';
+  for (const n of [...NAMES.keys()].sort((a, b) => a.localeCompare(b, 'ja'))) { const o = document.createElement('option'); o.value = n; dl.appendChild(o); }
+}
+function resolveName(s) {
+  s = (s || '').trim(); if (!s) return null;
+  if (NAMES.has(s)) return [s, NAMES.get(s)];
+  if (NAMES.has(s + '駅')) return [s + '駅', NAMES.get(s + '駅')];
+  for (const [n, p] of NAMES) if (n.startsWith(s) || n.includes(s)) return [n, p];
+  return null;
+}
+function fillPlaceInputs() { $('#pl1').value = K.places[0] ? K.places[0].label : ''; $('#pl2').value = K.places[1] ? K.places[1].label : ''; $('#placesNote').textContent = '体験版では、自宅は一乗寺駅のそばに固定しています。よく行く場所は町名か駅名で入力してください。'; }
+$('#placesExample').onclick = () => { $('#pl1').value = EXAMPLE_PLACE_NAMES[0]; $('#pl2').value = EXAMPLE_PLACE_NAMES[1]; };
+$('#placesForm').addEventListener('submit', e => { e.preventDefault(); $('#placesNext').click(); });
+$('#placesNext').onclick = () => {
+  const places = [], missing = [];
+  for (const id of ['#pl1', '#pl2']) {
+    const v = $(id).value.trim(); if (!v) continue;
+    const r = resolveName(v); if (r) { places.push({ x: Math.round(r[1][0]), y: Math.round(r[1][1]), label: r[0] }); $(id).value = r[0]; } else missing.push(v);
+  }
+  if (missing.length) { $('#placesNote').textContent = `「${missing.join('」「')}」が地図のデータに見つかりませんでした。一乗寺のまわりの町名か駅名で入力してください。`; return; }
+  K.places = places; updatePlacePaths(); show('privacy');
+};
+function updatePlacePaths() {
+  K.placePaths = K.places.map(p => route(HOME, [p.x, p.y]).map(q => [Math.round(q[0]), Math.round(q[1])]));
+  saveKnown(); recomputeKnown(); refreshSimMap();
+}
+$('#privacyDone').onclick = () => { store.set('setupDone', true); finishSetup(); };
+function finishSetup() {
+  recomputeKnown();
+  log(`知っている区画を推定しました: ${K.set.size}区画（約${(K.set.size * 0.1).toFixed(1)}km²）。なぞった範囲、登録した場所、その間の道から。環境の内訳: ${profileText()}。`);
+  goHome();
+}
+
+// ---- 01 条件選択
+const cond = { bucket: 20, mode: 'walk' };
+$$('.opts').forEach(g => g.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  $$('button', g).forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+  cond[g.dataset.k] = g.dataset.k === 'bucket' ? +b.dataset.v : b.dataset.v;
+}));
+function goHome() {
+  trip = null; sim.route = null; sim.fwd = false; sim.pos = HOME.slice(); sim.trail = []; sim.running = false;
+  show('home'); refreshSimMap(); tickUI();
+}
+$('#btnEditKnown').onclick = () => { show('trace'); traceView.setView(-150, -800, 0.12); };
+$('#btnGo').onclick = () => startOuting({ ...cond }, false);
+$('#btnOmakase').onclick = () => {
+  const table = [['walk', 20, .24], ['walk', 45, .16], ['bike', 20, .14], ['bike', 45, .14], ['transit', 20, .1], ['transit', 45, .1], ['walk', 90, .04], ['bike', 90, .04], ['transit', 90, .04]];
+  let r = Math.random(), pick = table[0]; for (const t of table) { r -= t[2]; if (r <= 0) { pick = t; break; } }
+  startOuting({ mode: pick[0], bucket: pick[1] }, true);
+};
+function startOuting(c, omakase) {
+  recomputeKnown(); sim.pos = HOME.slice(); sim.trail = []; sim.route = null;
+  const sel = c.mode === 'transit' ? selectTransit(c.bucket) : selectArea(c);
+  if (!sel) { log('条件に合う未知の区画が見つかりませんでした。条件を変えてください。'); return; }
+  newTrip(c, sel);
+  const cell = sel.cell;
+  if (omakase) log(`おまかせ: 条件もランダムに決めました（${MODE_J[c.mode]}・片道〜${c.bucket}分）。良し悪しでは選んでいません。`, 'ai');
+  if (c.mode === 'transit') log(`行き先の区画を選びました。電車で行ける範囲にある、まだ知らない区画 ${sel.cands.length}個から、既知に少ない環境（${TYPES[cell.t]}）を優先して1つ。降りる駅から歩いて数分の場所です。場所の良し悪しは評価していません。`, 'ai');
+  else log(`行き先の区画を選びました。${MODE_J[c.mode]}で片道〜${c.bucket}分（自宅から${(sel.minD / 1000).toFixed(1)}〜${(sel.maxD / 1000).toFixed(1)}km）の、まだ知らない区画 ${sel.cands.length}個が候補。既知の環境（${profileText() || 'まだ少ない'}）と違う種類を優先し、選ばれたのは「${TYPES[cell.t]}」の区画です。場所の良し悪しは評価していません。${sel.widened ? '近くがすべて既知だったので、同じ条件のまま少し遠くまで候補を広げました。' : ''}${sel.sparse ? '既知の情報がまだ少ないので、生活圏から遠めに取っています。' : ''}`, 'ai');
+  show('calc'); runCalc(present);
+}
+
+// ---- 02 算出中（キャンバス「①-7」）：大きく振れながら探し、決まった瞬間に橙になって揺れが素早く収まる。
+//      真上で「！」として止まり（約3.6秒）、周りの円・目盛り・▲が出てから、扇がいま向いている方向へ回る。
+// コンパスの意味：円・目盛り・▲は回らない。▲（真上）＝行き先の方向。
+// 扇＝行き先を上とした図の中で、自分が向いている方向（向き − 行き先の方位）。扇が▲と重なったとき、行き先は真正面。
+let fanAngle = 0;
+function setFanAngle(a, ms) { const g = $('#mkRot'); g.style.transition = ms ? `transform ${ms}ms cubic-bezier(.25,.7,.25,1)` : 'none'; fanAngle = a; g.style.transform = `rotate(${a}deg)`; }
+function setBeam(a) { setFanAngle(fanAngle + angDiff(fanAngle, a), 600); }
+// 行き先を上とした図での、自分の向き
+const facingAngle = tgt => angDiff(0, sim.heading - bearing(sim.pos, tgt));
+(function drawTicks() {
+  const f = x => x.toFixed(2), R = 156;
+  let minor = '', major = '';
+  for (let k = 0; k < 36; k++) {
+    const a = k * Math.PI / 18, isMajor = k % 9 === 0, r1 = isMajor ? R - 12 : R - 6;
+    const seg = `M${f(Math.sin(a) * r1)},${f(-Math.cos(a) * r1)} L${f(Math.sin(a) * R)},${f(-Math.cos(a) * R)} `;
+    if (isMajor) major += seg; else minor += seg;
+  }
+  $('#mkTicksMinor').setAttribute('d', minor); $('#mkTicksMajor').setAttribute('d', major);
+})();
+// 盤（円・目盛り・▲）、距離、03だけの行（条件・所要時間）の出し入れ
+function setMarkLayer({ dial, dist, pre }) {
+  $('#mkDial').style.opacity = dial ? 1 : 0;
+  const L = $('#markLayer'); L.classList.toggle('show-dist', !!dist); L.classList.toggle('pre', !!pre);
+}
+// 扇が真上で止まるまで（探す→決まる→収まる）
+const CALC_STOP_MS = 3580;
+// 止まってから（仕様書 §7-9）：250ms 間を置く → 光る 680ms → 260ms 待つ → 円・目盛り・▲ 400ms → 300ms 待つ → 扇が回る 700ms
+const BEFORE_SPARK_MS = 250, SPARK_MS = 680, AFTER_SPARK_MS = 260, DIAL_IN_MS = 400, BEFORE_TURN_MS = 300, TURN_MS = 700;
+function runCalc(done) {
+  const g = $('#mkRot'), svg = $('#mark'), dial = $('#mkDial');
+  const face = facingAngle([trip.area.cx, trip.area.cy]);
+  setMarkLayer({ dial: false, dist: false, pre: false });
+  dial.style.transition = 'none'; dial.style.transform = 'none';
+  g.style.transition = 'none'; svg.classList.remove('spark');
+  const at = s => s * 1000 / CALC_STOP_MS, E = 'ease-in-out';
+  // 扇：[秒, 角度, つぎの区間の動き]
+  const turn = [
+    [0, 215, E], [0.66, -190, E], [1.32, 150, E], [1.92, -110, E],        // 探している
+    [2.46, 75, E], [2.81, -48, E], [3.09, 27, E], [3.30, -11, E],          // 決まった：間隔を詰めて収まる
+    [3.475, 3.4, 'ease-out'], [3.58, 0, 'linear'],                          // 真上（▲の位置）で止まる
+  ];
+  const anims = [
+    g.animate(turn.map(([s, a, e]) => ({ offset: at(s), transform: `rotate(${a}deg)`, easing: e })), { duration: CALC_STOP_MS, fill: 'forwards' }),
+    svg.animate([{ offset: 0, color: '#A3B55B' }, { offset: at(0.6), color: '#8DB3BE' }, { offset: at(1.2), color: '#E69B80' }, { offset: at(1.8), color: '#D3A652' }, { offset: at(2.46), color: UI.mark }, { offset: 1, color: UI.mark }], { duration: CALC_STOP_MS, fill: 'forwards' }),
+  ];
+  let t = CALC_STOP_MS;
+  // 真上で止まる＝ロゴの「！」の形。一瞬の間を置いてから、明るさだけを一瞬上げる（大きさは変えない・無音）
+  setTimeout(() => {
+    anims.forEach(a => a.cancel());
+    g.style.transform = 'rotate(0deg)'; fanAngle = 0; svg.style.color = UI.mark;
+  }, t);
+  setTimeout(() => svg.classList.add('spark'), t += BEFORE_SPARK_MS);
+  setTimeout(() => svg.classList.remove('spark'), t += SPARK_MS);
+  // 円・目盛り・▲が出る（回らない）
+  setTimeout(() => { dial.style.transition = `opacity ${DIAL_IN_MS}ms ease`; dial.style.opacity = 1; }, t += AFTER_SPARK_MS);
+  // 扇が、いま自分が向いている方向へ回る
+  setTimeout(() => { g.style.transition = `transform ${TURN_MS}ms ease-out`; fanAngle = face; g.style.transform = `rotate(${face}deg)`; }, t += DIAL_IN_MS + BEFORE_TURN_MS);
+  setTimeout(() => { dial.style.transition = ''; done(); }, t + TURN_MS + 50);
+}
+
+// ---- 03 行き先の提示 → 04 コンパス（歩き出すと所要時間と封筒のアイコンをしまう）
+function tripMinutes() {
+  if (!trip) return 0;
+  if (trip.transit) { const L = trip.transit.legs, last = L[L.length - 1]; return Math.round((last.dep - sim.time) / 60000 + (last.to - last.from) * last.hop + areaMinutes(trip.sel.d, 'walk')); }
+  return areaMinutes(Math.hypot(trip.area.cx - HOME[0], trip.area.cy - HOME[1]), trip.cond.mode);
+}
+function present() {
+  if (!trip) return;
+  sim.mode = trip.cond.mode === 'bike' ? 'bike' : 'walk';
+  trip.departAt = new Date(sim.time.getTime()); trip.startPos = sim.pos.slice();
+  sim.running = true; sim.trail = [sim.pos.slice()];
+  const condText = `${MODE_J[trip.cond.mode]}・片道〜${trip.cond.bucket}分`, eta = `約<span class="num">${tripMinutes()}</span>分`;
+  if (trip.transit) {
+    trip.phase = 'platform'; trip.pre = true;
+    $('#plCond').textContent = condText; $('#plEta').innerHTML = `着くまで ${eta}`;
+    renderPlatform(); show('platform');
+    log('行き先が決まりました。のりばと発車時刻だけを表示します（時刻はシナリオ）。乗り換え駅の名前は出しません。');
+  } else {
+    trip.phase = 'travel'; trip.best = Infinity; trip.pre = true;
+    $('#cpCond').textContent = condText; $('#cpEta').innerHTML = eta;
+    screens.compass.classList.add('pre'); $('#timeNote').hidden = true;
+    setMarkLayer({ dial: true, dist: true, pre: true });
+    updateCompass(); show('compass');
+    log('行き先が決まりました。所要時間はこの画面にだけ出します。歩き出すと、扇・▲と丸めた距離だけになります。▲（真上）が行き先の方向、扇は行き先を上とした図の中で自分が向いている方向で、重なれば行き先は真正面です。矢印・地図・行き先の名前は出しません。');
+  }
+  refreshSimMap(); tickUI();
+}
+function fmtDist(d) {
+  if (d < 950) return [String(Math.max(100, Math.round(d / 100) * 100)), 'm'];
+  if (d < 10000) return [(Math.round(d / 100) / 10).toFixed(1), 'km'];
+  return [String(Math.round(d / 1000)), 'km'];
+}
+function updateCompass() {
+  if (!trip) return;
+  const tgt = [trip.area.cx, trip.area.cy], d = dist(sim.pos, tgt);
+  setBeam(facingAngle(tgt));
+  const [n, u] = fmtDist(d); $('#distNum').textContent = n; $('#distUnit').textContent = u;
+  if (trip.pre && trip.startPos && dist(sim.pos, trip.startPos) > 40) {
+    trip.pre = false; screens.compass.classList.remove('pre'); $('#markLayer').classList.remove('pre');
+    log('歩き出したので、所要時間と封筒のアイコンをしまいました。');
+  }
+  // 時間条件を超えそうなときだけ知らせる（本人が選んだ条件の確認として）
+  if (trip.transit) return;
+  const el = (sim.time - trip.departAt) / 60000, pred = el + d * DETOUR / SPEED[sim.mode];
+  const note = $('#timeNote'), over = pred > trip.cond.bucket * 1.15 && el > 2;
+  if (over && note.hidden) { note.textContent = `このままだと、片道〜${trip.cond.bucket}分を超えそうです`; note.hidden = false; buzz(); log(`時間の見込みが条件（片道〜${trip.cond.bucket}分）を超えそうなので、そのことだけを知らせました。`); }
+  else if (!over && !note.hidden) note.hidden = true;
+}
+
+// ---- 05〜08 公共交通
+function renderPlatform() {
+  const tr = trip.transit, lg = tr.legs[tr.legIdx];
+  $('#plStation').hidden = !lg.first;
+  $('#plNum').textContent = lg.pl; $('#plTime').textContent = fmtTime(lg.dep);
+  screens.platform.classList.toggle('pre', !!(lg.first && trip.pre));
+}
+function renderRide() {
+  const tr = trip.transit, lg = tr.legs[tr.legIdx], left = lg.to - tr.stopIdx;
+  const dots = $('#rideDots'), want = lg.to - lg.from, key = tr.legIdx + (tr.wrong ? 'w' : '') + lg.to;
+  if (dots.dataset.leg !== key) {
+    dots.dataset.leg = key;
+    dots.innerHTML = Array.from({ length: want }, (_, i) => `<i class="${i === want - 1 ? 'last' : ''}"></i>`).join('');
+  }
+  $$('i', dots).forEach((el, i) => el.classList.toggle('gone', i < want - left));
+}
+function lineXY(lg, idx) { return LINES[lg.line].xy[idx]; }
+function transitTick(dtSec) {
+  const tr = trip.transit, lg = tr.legs[tr.legIdx];
+  if (tr.state === 'wait') {
+    sim.pos = lineXY(lg, lg.from).slice();
+    if (sim.time >= lg.dep) {
+      tr.state = 'move'; tr.stopIdx = lg.from; tr.segT = 0; trip.phase = 'ride'; trip.pre = false;
+      renderRide(); show(lg.to - lg.from === 1 ? 'alert' : 'ride');
+      log(lg.first ? '乗車しました。車内では、降りるまでの残りの駅を点だけで示します。' : '乗り換えました。');
+      tr.checkAt = new Date(sim.time.getTime() + 70000);
+    }
+    return;
+  }
+  if (tr.state === 'move') {
+    const a = lineXY(lg, tr.stopIdx), b = lineXY(lg, tr.stopIdx + 1);
+    tr.segT += dtSec / (lg.hop * 60);
+    const t = Math.min(1, tr.segT);
+    sim.pos = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; sim.heading = bearing(a, b);
+    if (tr.checkAt && sim.time >= tr.checkAt) { tr.checkAt = null; gpsCheck(); }
+    if (tr.segT >= 1) {
+      tr.stopIdx++; tr.segT = 0;
+      if (tr.stopIdx === lg.to - 1) { buzz(); show('alert'); log('降りる駅がひとつ手前になったので「次で降ります」だけを表示しました。'); }
+      if (tr.stopIdx >= lg.to) { tr.state = 'alight'; tr.until = new Date(sim.time.getTime() + 50000); buzz(); }
+      renderRide();
+    }
+    return;
+  }
+  if (tr.state === 'alight' && sim.time >= tr.until) {
+    if (tr.legIdx < tr.legs.length - 1) {
+      tr.legIdx++; tr.state = 'wait'; trip.phase = 'platform'; renderPlatform(); show('platform');
+      log('降りて、乗り換えです。駅の名前は出さず、次ののりば番号と発車時刻だけを表示します。');
+    } else {
+      tr.state = 'done'; trip.phase = 'travel'; sim.mode = 'walk'; trip.best = Infinity; trip.d0 = dist(sim.pos, [trip.area.cx, trip.area.cy]);
+      screens.compass.classList.remove('pre'); $('#timeNote').hidden = true;
+      setMarkLayer({ dial: true, dist: true, pre: false }); $('#mark').style.color = UI.mark;
+      updateCompass(); show('compass'); log('降車しました。ここからはコンパスで歩きます。');
+    }
+  }
+}
+function gpsCheck() {
+  const tr = trip.transit;
+  if (!tr.wrong) {
+    const el = $('#gpsOk'); el.hidden = false; el.style.opacity = 1; setTimeout(() => { el.style.opacity = 0; }, 2500);
+    log('GPSで、予定の便に乗っていることを静かに確かめました。');
+    return;
+  }
+  // 反対方向の電車だった：否定的な表示は出さず、この電車の先にある未知の場所へ行き先を変える
+  buzz();
+  const lg = tr.legs[tr.legIdx], L = LINES[lg.line];
+  const budget = trip.cond.bucket - (sim.time - trip.departAt) / 60000;
+  const opts = [];
+  for (let i = tr.stopIdx + 1; i < L.stops.length; i++) {
+    const ride = (i - tr.stopIdx) * L.hop;
+    if (ride + 6 <= budget + 4) opts.push({ legs: [{ line: lg.line, from: tr.stopIdx, to: i }], ride, stop: L.xy[i], name: L.stops[i] });
+  }
+  const sel = selectTransit(trip.cond.bucket, opts.length ? opts : [{ legs: [{ line: lg.line, from: tr.stopIdx, to: tr.stopIdx + 1 }], ride: L.hop, stop: L.xy[tr.stopIdx + 1], name: L.stops[tr.stopIdx + 1] }]);
+  if (!sel) return;
+  tr.legs = [{ ...lg, to: sel.trip.legs[0].to }]; tr.legIdx = 0; tr.wrong = false;
+  trip.cell = sel.cell; trip.area = { cx: sel.cell.cx, cy: sel.cell.cy, a: sel.cell.a }; trip.sel = sel; trip.cands = sel.cands;
+  trip.envPromise = makeHint(sel.cell).then(env => { trip.env = env; onEnvReady(env, sel.cell); return env; });
+  log(`GPSで、予定と反対方向の電車に乗っていることに気づきました。「間違い」とは表示せず、この電車の先にある未知の区画（${TYPES[sel.cell.t]}）へ行き先を静かに変えました。封筒も新しい行き先に合わせて作り直します。`, 'ai');
+  renderRide(); if (tr.legs[0].to - tr.stopIdx === 1) show('alert'); refreshSimMap();
+}
+
+// ---- 09 到着：画面が切り替わり振動1回。町名の上下に余白。3秒ほど何も起きず、それから封筒
+function checkArrival(dtSec) {
+  const A = trip.area;
+  if (insideHex(sim.pos[0], sim.pos[1], A.cx, A.cy, A.a, 25)) trip.inside += dtSec; else trip.inside = 0;
+  if (trip.inside >= 5) arrive();
+}
+function arrive() {
+  trip.phase = 'arrived'; trip.arrivedAt = new Date(sim.time.getTime());
+  sim.route = null; sim.fwd = false;
+  const town = placeName(trip.cell), tn = $('#townName');
+  tn.textContent = town; tn.style.fontSize = Math.min(36, Math.floor(340 / ([...town].length * 1.1))) + 'px';   // 長い町名も1行に
+  const env = $('#envArrived'); env.classList.remove('shown', 'open'); $('#hintWord').textContent = '';
+  env.setAttribute('aria-label', '封筒を開ける');
+  show('arrived'); buzz();
+  setTimeout(() => { if (current === 'arrived') env.classList.add('shown'); }, 3000);
+  const mins = Math.round((trip.arrivedAt - trip.departAt) / 60000);
+  log(`到着を確定しました（区画の境界から25m内側に5秒）。表示するのは「今日の場所」と町名と封筒だけ。3秒ほど何も起きない間を置いてから封筒を出します。ここから先、アプリは何も表示せず、何も答えません。出発から${mins}分。`);
+  refreshSimMap();
+}
+// ---- 10 開封（キャンバス「封筒 B」）：その場で開き、便箋に一語だけ。もう一度さわると閉じる。ほかのボタンは置かない
+async function openEnvelope() {
+  const el = $('#envArrived');
+  if (!el.classList.contains('shown') || !trip) return;
+  if (el.classList.contains('open')) { el.classList.remove('open'); el.setAttribute('aria-label', '封筒を開ける'); return; }
+  let env = trip.env;
+  if (!env || env.pending) env = await Promise.race([trip.envPromise, new Promise(r => setTimeout(() => r(null), 3000))]);
+  if (!env || !env.word) { const h = ruleHint(trip.cell); env = { word: h.w, source: 'rule' }; trip.env = env; }
+  const w = $('#hintWord'); w.textContent = env.word;
+  w.style.fontSize = Math.min(30, Math.floor(176 / ([...env.word].length * 1.16))) + 'px';   // 長い語も便箋に収める（字間 .16em 込み）
+  el.classList.add('open'); el.setAttribute('aria-label', `封筒（中身：${env.word}）`);
+  if (!trip.opened) { trip.opened = true; log('封筒が開けられました。達成の判定や称賛は出しません。探すかどうかも本人しだいです。'); }
+}
+$('#envArrived').addEventListener('click', openEnvelope);
+
+// ---- 外出の記録：歩いて通った区画と、滞在した区画を「知っている」に加える（乗り物で通過しただけの場所は加えない）
+function recordOuting() {
+  const before = K.set.size;
+  const add = new Set(K.walked);
+  const walkedPts = trip.cond.mode === 'walk' ? sim.trail : trip.postTrail || [];
+  samplePath(walkedPts, 20, (x, y) => { const [q, r] = hexOf(x, y, FINE_A); add.add(cellKey(q, r)); });
+  if (trip.transit) samplePath(trip.postTrail || [], 20, (x, y) => { const [q, r] = hexOf(x, y, FINE_A); add.add(cellKey(q, r)); });
+  if (trip.phase === 'arrived') {
+    const A = trip.area;
+    for (let dx = -A.a; dx <= A.a; dx += 60) for (let dy = -A.a; dy <= A.a; dy += 60) {
+      if (!insideHex(A.cx + dx, A.cy + dy, A.cx, A.cy, A.a)) continue;
+      const [q, r] = hexOf(A.cx + dx, A.cy + dy, FINE_A); add.add(cellKey(q, r));
+    }
+  }
+  K.walked = [...add]; saveKnown(); recomputeKnown();
+  return { before, after: K.set.size };
+}
+// ---- 11 終了：白い画面に薄く一行（操作盤の「帰宅する」＝GPSで家に着いたとき）
+function endDay() {
+  if (!trip) return;
+  const { before, after } = recordOuting();
+  const t = sim.time, town = trip.phase === 'arrived' ? placeName(trip.cell) : '';
+  $('#endLine').textContent = `${t.getMonth() + 1}月${t.getDate()}日${town ? '　' + town : ''}`;
+  log(`帰宅しました。歩いた道と滞在した区画を「知っている」に加えました（${before} → ${after}区画）。乗り物で通過しただけの場所は加えていません。画面には日付と町名を薄く一行だけ。達成の表示はしません。`);
+  trip = null; sim.running = false; sim.route = null; sim.pos = HOME.slice(); sim.trail = [];
+  show('end'); refreshSimMap(); tickUI();
+}
+// ---- 09 のホームボタン：本人が今日の外出を終え、条件選択に戻る
+function finishOuting() {
+  if (!trip) return;
+  const { before, after } = recordOuting();
+  log(`本人がホームボタンで今日の外出を終えました。歩いた道と滞在した区画を「知っている」に加え（${before} → ${after}区画）、条件選択に戻ります。`);
+  goHome();
+}
+// ---- 03・04・05 の戻るボタン：行き先を取りやめて条件選択に戻る（それまでに歩いた道は「知っている」に加える）
+function backToConditions() {
+  if (!trip) return;
+  const walked = sim.trail.length > 2;
+  if (walked) recordOuting();
+  log(`本人が戻るボタンで条件選択に戻りました。${walked ? 'それまでに歩いた道は「知っている」に加えています。' : ''}`);
+  goHome();
+}
+$$('[data-nav="conditions"]').forEach(b => b.onclick = backToConditions);
+$('#btnFinish').onclick = finishOuting;
+$('#placesBack').onclick = () => show('trace');
+$('#privacyBack').onclick = () => show('places');
+function nextHoliday() {
+  const next = new Date(sim.time.getTime()); next.setDate(next.getDate() + 1); sim.time = dayStart(next);
+  log('次の休日。本人がアプリを開いたので、起動画面から始まります（通知や呼びかけはしません）。');
+  runSplash(goHome);
+}
+
+// ---- 端末の地図（本人が開いたときだけ）
+$$('[data-open-map]').forEach(b => b.onclick = () => {
+  $('#phoneMap').hidden = false;
+  requestAnimationFrame(() => { phoneView.resize(); phoneView.setView(sim.pos[0], sim.pos[1], 0.09); });
+  log('本人が「地図を見る」を開きました。使うかどうかは本人が決めます。');
+});
+$('#phoneMapClose').onclick = () => { $('#phoneMap').hidden = true; };
+
+// ---------------------------------------------------------------- 体験版の操作
+function setRoute(pts, kind) { sim.route = pts; sim.routeIdx = 1; sim.routeKind = kind; sim.fwd = false; }
+function goToward(target, kind) { setRoute(route(sim.pos, target, { noSteps: sim.mode === 'bike', toExact: true }), kind); }
+function followBeam() {
+  if (!trip) return;
+  goToward([trip.area.cx, trip.area.cy], 'beam');
+  log('（操作盤）扇を▲に合わせて、道なりに進みます。');
+  renderCtrl();
+}
+function detour() {
+  if (!trip) return;
+  const b = bearing(sim.pos, [trip.area.cx, trip.area.cy]) + (Math.random() < 0.5 ? 1 : -1) * (100 + Math.random() * 50);
+  const r = sim.mode === 'bike' ? 1400 : 550, t = b * Math.PI / 180;
+  goToward([sim.pos[0] + Math.sin(t) * r, sim.pos[1] + Math.cos(t) * r], 'detour');
+  log('（操作盤）行き先とは違う方へ、寄り道します。');
+  renderCtrl();
+}
+function wander() {
+  const a = Math.random() * Math.PI * 2, r = 120 + Math.random() * 200;
+  const c = trip ? [trip.area.cx, trip.area.cy] : sim.pos;
+  goToward([c[0] + Math.sin(a) * r, c[1] + Math.cos(a) * r], 'wander');
+  renderCtrl();
+}
+function skipAhead() {
+  if (!trip) return;
+  const pts = route(sim.pos, [trip.area.cx, trip.area.cy], { noSteps: sim.mode === 'bike', toExact: true });
+  let acc = 0; const total = pts.reduce((s, p, i) => i ? s + dist(pts[i - 1], p) : 0, 0), stopAt = Math.max(0, total - 180);
+  for (let i = 1; i < pts.length; i++) {
+    const d = dist(pts[i - 1], pts[i]);
+    if (acc + d >= stopAt) { const t = (stopAt - acc) / d; sim.pos = [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * t, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t]; break; }
+    acc += d; sim.pos = pts[i].slice(); sim.trail.push(sim.pos.slice());
+  }
+  sim.time = new Date(sim.time.getTime() + stopAt * DETOUR / SPEED[sim.mode] * 60000);
+  sim.trail.push(sim.pos.slice());
+  setRoute(route(sim.pos, [trip.area.cx, trip.area.cy], { noSteps: sim.mode === 'bike', toExact: true }), 'beam');
+  log('（操作盤）到着の手前まで早送りしました。');
+  renderCtrl();
+}
+function takeWrongTrain() {
+  const tr = trip.transit, lg = tr.legs[tr.legIdx];
+  if (!lg.first) return;
+  const wrongLine = lg.line === 'down' ? 'kurama' : 'down';
+  tr.legs = [{ line: wrongLine, from: 0, to: Math.min(3, LINES[wrongLine].stops.length - 1), dep: lg.dep, hop: LINES[wrongLine].hop, pl: lg.pl, first: true }];
+  tr.wrong = true;
+  log('（操作盤）わざと反対方向の電車に乗ります。');
+  renderCtrl();
+}
+function quitOuting() { log('（操作盤）出かけるのをやめて、条件選択に戻りました。'); goHome(); }
+
+const ctrl = $('#simCtrl');
+function renderCtrl() {
+  let h = '', quick = '';
+  const ph = trip ? trip.phase : null;
+  if (!D || current === 'splash') h = '<p class="hint">起動しています。</p>';
+  else if (['trace', 'places', 'privacy'].includes(current)) {
+    h = '<p class="hint">左の端末で初回設定を進めてください。「例を入れる」で、一乗寺に住む大学生の生活圏の例が入ります。</p>';
+    quick = '<span class="sbtn" data-q="quick">例で済ませる</span>';
+  } else if (current === 'home') h = '<p class="hint">端末で条件を選び「出かける」か、「おまかせ」を押してください。</p>';
+  else if (current === 'calc') h = '<p class="hint">行き先を選んでいます（3〜4秒）。</p>';
+  else if (current === 'end') { h = '<div class="row"><button type="button" class="sbtn strong" data-a="next">次の休日にアプリを開く</button></div>'; quick = '<span class="sbtn" data-q="next">次の休日</span>'; }
+  else if (ph === 'travel') {
+    const on = k => sim.route && sim.routeKind === k ? ' on' : '';
+    h = `<div class="row"><button type="button" class="sbtn${on('beam')}" data-a="beam">扇を▲に合わせて進む</button><button type="button" class="sbtn${on('detour')}" data-a="detour">寄り道する</button><button type="button" class="sbtn" data-a="stop">止まる</button><button type="button" class="sbtn" data-a="skip">近くまで早送り</button></div>
+      <div class="row"><div class="pad" aria-label="手動で動かす"><button type="button" data-turn="-1" aria-label="左を向く">⟲</button><button type="button" data-fwd aria-label="前へ（押している間）">↑</button><button type="button" data-turn="1" aria-label="右を向く">⟳</button></div><p class="hint">手で動かす：⟲⟳で向きを変え、↑を押している間だけ前へ。<br>地図をタップすると、そこまで道なりに進みます。</p></div>
+      ${trip.pre ? '<div class="row"><button type="button" class="sbtn" data-a="quit">やめて条件選択に戻る</button></div>' : ''}`;
+    quick = `<span class="sbtn${on('beam')}" data-q="beam">▲に合わせる</span><span class="sbtn" data-q="detour">寄り道</span>`;
+  } else if (ph === 'platform') {
+    const tr = trip.transit, lg = tr.legs[tr.legIdx];
+    h = `<p class="hint">電車を待っています（時間を早送りしています）。</p>${lg.first && tr.state === 'wait' && !tr.wrong ? '<div class="row"><button type="button" class="sbtn" data-a="wrong">反対方向の電車に乗ってしまう</button><button type="button" class="sbtn" data-a="quit">やめて条件選択に戻る</button></div>' : ''}`;
+    quick = lg.first && !tr.wrong ? '<span class="sbtn" data-q="wrong">反対方向に乗る</span>' : '';
+  } else if (ph === 'ride') h = '<p class="hint">乗車中です。降りる駅のひとつ手前で「次で降ります」に変わり、端末が振動します。</p>';
+  else if (ph === 'arrived') {
+    h = `<p class="hint">到着後、アプリは何も表示しません。封筒は3秒ほどしてから現れ、さわると開きます。</p><div class="row"><button type="button" class="sbtn${sim.route ? ' on' : ''}" data-a="wander">あたりを歩く</button><button type="button" class="sbtn strong" data-a="end">帰宅する</button></div>`;
+    quick = '<span class="sbtn" data-q="wander">歩く</span><span class="sbtn" data-q="end">帰宅</span>';
+  }
+  ctrl.innerHTML = h; $('#sheetQuick').innerHTML = quick;
+}
+const ACT = { beam: followBeam, detour, stop: () => { sim.route = null; sim.fwd = false; renderCtrl(); }, skip: skipAhead, wander, end: endDay, wrong: takeWrongTrain, quick: quickSetup, next: nextHoliday, quit: quitOuting };
+ctrl.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (b) ACT[b.dataset.a](); });
+$('#sheetQuick').addEventListener('click', e => { e.stopPropagation(); const b = e.target.closest('[data-q]'); if (b) ACT[b.dataset.q](); });
+ctrl.addEventListener('pointerdown', e => {
+  const t = e.target.closest('[data-turn]'), f = e.target.closest('[data-fwd]');
+  if (t) { sim.turn = +t.dataset.turn; sim.route = null; }
+  if (f) { sim.fwd = true; sim.route = null; }
+});
+window.addEventListener('pointerup', () => { sim.turn = 0; sim.fwd = false; });
+window.addEventListener('keydown', e => {
+  if (!trip || trip.phase !== 'travel' || /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  if (e.key === 'ArrowLeft') { sim.turn = -1; sim.route = null; } else if (e.key === 'ArrowRight') { sim.turn = 1; sim.route = null; } else if (e.key === 'ArrowUp') { sim.fwd = true; sim.route = null; e.preventDefault(); }
+});
+window.addEventListener('keyup', e => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') sim.turn = 0; if (e.key === 'ArrowUp') sim.fwd = false; });
+$$('[data-speed]').forEach(b => b.onclick = () => { sim.speed = +b.dataset.speed; $$('[data-speed]').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false')); });
+$('#sheetHandle').onclick = () => { const s = $('#sim'); s.classList.toggle('open'); $('#sheetHandle').setAttribute('aria-expanded', s.classList.contains('open')); requestAnimationFrame(() => simView.resize()); };
+$('#simReset').onclick = () => { store.clear(); location.reload(); };
+$('#simQuick').onclick = () => quickSetup();
+function quickSetup() {
+  K.strokes = EXAMPLE_STROKES.map(s => s.map(p => p.slice()));
+  K.places = EXAMPLE_PLACE_NAMES.map(n => resolveName(n)).filter(Boolean).map(([n, p]) => ({ x: Math.round(p[0]), y: Math.round(p[1]), label: n }));
+  updatePlacePaths(); store.set('setupDone', true);
+  log('（操作盤）初回設定を例で済ませました。一乗寺に住む大学生の生活圏（駅のまわり、スーパー、大学のある吉田本町、本屋のある北白川伊織町）です。');
+  finishSetup();
+}
+$('#lyKnown').onchange = refreshSimMap; $('#lyTarget').onchange = refreshSimMap;
+$('#simZoomIn').onclick = () => simView.zoomAt(simView.cx, simView.cy, 1.5);
+$('#simZoomOut').onclick = () => simView.zoomAt(simView.cx, simView.cy, 1 / 1.5);
+$('#simFollow').onclick = () => { sim.follow = true; simView.userMoved = false; simView.setView(sim.pos[0], sim.pos[1]); };
+
+// ---- 裏側のログ
+function log(msg, kind) {
+  const li = document.createElement('li'); if (kind) li.className = kind;
+  li.innerHTML = `<time>${fmtTime(sim.time)}</time><span></span>`; li.lastChild.textContent = msg;
+  const ol = $('#simLog'); ol.prepend(li);
+  while (ol.children.length > 60) ol.lastChild.remove();
+}
+
+// ---------------------------------------------------------------- ループ
+let lastT = performance.now(), uiAcc = 0, mapAcc = 0;
+function loop(now) {
+  const dt = Math.min(0.25, (now - lastT) / 1000); lastT = now;
+  stepSim(dt);
+  requestAnimationFrame(loop);
+}
+function stepSim(dt) {
+  if (trip && sim.running) {
+    const simDt = dt * sim.speed;
+    sim.time = new Date(sim.time.getTime() + simDt * 1000);
+    if (trip.transit && (trip.phase === 'platform' || trip.phase === 'ride')) transitTick(simDt);
+    else if (trip.phase === 'travel' || trip.phase === 'arrived') moveTick(simDt);
+    if (trip && trip.phase === 'travel') { checkDeviation(); updateCompass(); checkArrival(simDt); }
+  }
+  uiAcc += dt; mapAcc += dt;
+  if (uiAcc > 0.25) { uiAcc = 0; tickUI(); }
+  if (mapAcc > 1 / 20 && trip && sim.running) { mapAcc = 0; followCam(); simView.request(); if (!$('#phoneMap').hidden) phoneView.request(); }
+}
+function moveTick(simDt) {
+  const v = (sim.mode === 'bike' ? 4.2 : 1.25), step = v * simDt;
+  if (sim.turn) sim.heading = (sim.heading + sim.turn * 90 * Math.min(simDt, 0.1 * sim.speed) / sim.speed * 1.6 + 360) % 360;
+  let moved = false;
+  if (sim.route) {
+    let rem = step;
+    while (rem > 0 && sim.route) {
+      const tgt = sim.route[sim.routeIdx]; if (!tgt) { sim.route = null; break; }
+      const d = dist(sim.pos, tgt);
+      if (d > 0.01) { const hb = bearing(sim.pos, tgt); sim.heading = sim.heading + angDiff(sim.heading, hb) * 0.5; sim.heading = (sim.heading + 360) % 360; }
+      if (d <= rem) { sim.pos = tgt.slice(); rem -= d; sim.routeIdx++; if (sim.routeIdx >= sim.route.length) { const k = sim.routeKind; sim.route = null; if (k === 'wander' && trip && trip.phase === 'arrived') wander(); else renderCtrl(); } }
+      else { sim.pos = [sim.pos[0] + (tgt[0] - sim.pos[0]) * rem / d, sim.pos[1] + (tgt[1] - sim.pos[1]) * rem / d]; rem = 0; }
+      moved = true;
+    }
+  } else if (sim.fwd) {
+    const t = sim.heading * Math.PI / 180; sim.pos = [sim.pos[0] + Math.sin(t) * step, sim.pos[1] + Math.cos(t) * step]; moved = true;
+  }
+  if (moved) {
+    const last = sim.trail[sim.trail.length - 1];
+    if (!last || dist(last, sim.pos) > 12) {
+      sim.trail.push(sim.pos.slice());
+      if (trip && (trip.phase === 'arrived' || trip.transit)) (trip.postTrail = trip.postTrail || []).push(sim.pos.slice());
+    }
+  }
+}
+// 想定と違う方へ進んだら、否定的な表示は出さずに行き先を選び直す（原則5）
+function checkDeviation() {
+  const tgt = [trip.area.cx, trip.area.cy], d = dist(sim.pos, tgt);
+  if (d < trip.best) trip.best = d;
+  if (trip.best === Infinity || sim.time < trip.recalcAt) return;
+  const n = sim.trail.length; if (n < 4) return;
+  let k = n - 1, acc = 0; while (k > 0 && acc < 150) { acc += dist(sim.trail[k], sim.trail[k - 1]); k--; }
+  if (acc < 120) return;
+  const moveB = bearing(sim.trail[k], sim.trail[n - 1]);
+  const off = Math.abs(angDiff(moveB, bearing(sim.pos, tgt)));
+  if (d > trip.best + Math.max(150, 0.1 * trip.d0) && off > 70) {
+    trip.recalcAt = new Date(sim.time.getTime() + 90000);
+    const el = (sim.time - trip.departAt) / 60000, remain = Math.max(4, trip.cond.bucket - el);
+    const grid = trip.cond.bucket === 20 ? 'fine' : 'coarse';
+    const maxD = remain * SPEED[sim.mode] / DETOUR;
+    const cands = gatherCandidates({ grid, from: sim.pos, minD: grid === 'fine' ? 150 : 400, maxD, dir: moveB, dirTol: 45 });
+    if (!cands.length) return;
+    const pick = pickWeighted(cands, o => scoreCell(o.c, o.d, maxD, false));
+    const old = trip.cell;
+    trip.cell = pick.c; trip.area = { cx: pick.c.cx, cy: pick.c.cy, a: pick.c.a }; trip.cands = cands.map(o => o.c); trip.best = pick.d; trip.d0 = pick.d; trip.inside = 0;
+    trip.envPromise = makeHint(pick.c).then(env => { if (trip && trip.cell === pick.c) trip.env = env; onEnvReady(env, pick.c); return env; });
+    log(`進んでいる方向が行き先から離れたので、行き先を静かに選び直しました（${TYPES[old.t]} → ${TYPES[pick.c.t]}、進んでいる方向の先にある未知の区画）。画面には何も知らせず、扇の向きが変わるだけです。`, 'ai');
+    refreshSimMap();
+  }
+}
+function followCam() {
+  if (!sim.follow || simView.userMoved) return;
+  const [sx, sy] = simView.w2s(sim.pos[0], sim.pos[1]);
+  const m = Math.min(simView.w, simView.h) * 0.22;
+  if (sx < m || sx > simView.w - m || sy < m || sy > simView.h - m) simView.setView(sim.pos[0], sim.pos[1]);
+}
+function tickUI() {
+  const t = fmtTime(sim.time), d = sim.time;
+  $('#simClock').textContent = t; $('#sheetClock').textContent = t;
+  $('#simDate').textContent = `${d.getMonth() + 1}月${d.getDate()}日（${WEEK[d.getDay()]}）`;
+  $('#simElapsed').textContent = trip && trip.departAt ? `出発から ${Math.floor((sim.time - trip.departAt) / 60000)}分` : '出かける前';
+  $('#statusTime').textContent = t;
+}
+
+// ---------------------------------------------------------------- 地図の重ね描き
+function refreshSimMap() { simView && simView.request(); traceView && traceView.request(); }
+function drawKnown(c, v, fill) {
+  if (v.s < 0.012) return;
+  for (const id of K.set) { const [q, r] = id.split(',').map(Number), [x, y] = hexCenter(q, r, FINE_A); const [sx, sy] = v.w2s(x, y); if (sx < -30 || sy < -30 || sx > v.w + 30 || sy > v.h + 30) continue; drawHex(c, v, x, y, FINE_A * 0.97, fill); }
+}
+function drawMe(c, v, pos, heading, quiet) {
+  const [x, y] = v.w2s(pos[0], pos[1]), t = (heading - 90) * Math.PI / 180;
+  if (!quiet) { c.fillStyle = UI.markSoft; c.beginPath(); c.moveTo(x, y); c.arc(x, y, 26, t - 0.5, t + 0.5); c.closePath(); c.fill(); }
+  c.fillStyle = UI.bg; c.beginPath(); c.arc(x, y, 7, 0, Math.PI * 2); c.fill();
+  c.fillStyle = UI.ink; c.beginPath(); c.arc(x, y, 4.5, 0, Math.PI * 2); c.fill();
+}
+function drawTrail(c, v, pts, color, w) {
+  if (pts.length < 2) return;
+  c.beginPath(); pts.forEach((p, i) => { const [x, y] = v.w2s(p[0], p[1]); i ? c.lineTo(x, y) : c.moveTo(x, y); });
+  c.strokeStyle = color; c.lineWidth = w; c.setLineDash([]); c.stroke();
+}
+function simOverlay(c, v) {
+  if ($('#lyKnown').checked) drawKnown(c, v, UI.simKnown);
+  const showT = $('#lyTarget').checked || (trip && trip.phase === 'arrived');
+  if (trip && $('#lyTarget').checked && trip.cands) {
+    for (const cc of trip.cands) { const [x, y] = v.w2s(cc.cx, cc.cy); c.fillStyle = TYPE_COLORS[cc.t]; c.globalAlpha = .8; c.beginPath(); c.arc(x, y, 3, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1; }
+  }
+  if (trip && showT) {
+    drawHex(c, v, trip.area.cx, trip.area.cy, trip.area.a, UI.markSoft, UI.mark, 2, [6, 4]);
+    if ($('#lyTarget').checked) {
+      const [x, y] = v.w2s(trip.area.cx, trip.area.cy - trip.area.a);
+      const txt = `${placeName(trip.cell)}（${TYPES[trip.cell.t]}）` + (trip.env && trip.env.word ? `　封筒: ${trip.env.word}` : '');
+      c.font = `700 12px ${FONT}`; c.textBaseline = 'top'; c.lineWidth = 3; c.strokeStyle = PAL.full.halo;
+      const w = c.measureText(txt).width; c.strokeText(txt, x - w / 2, y + 6); c.fillStyle = UI.ink; c.fillText(txt, x - w / 2, y + 6);
+    }
+  }
+  drawTrail(c, v, sim.trail, '#4E4D49', 2.2);
+  drawPin(c, v, HOME[0], HOME[1], '自宅', UI.ink);
+  for (const p of K.places) drawPin(c, v, p.x, p.y, p.label, UI.simKnownLine);
+  drawMe(c, v, sim.pos, sim.heading);
+  if ($('#lyTarget').checked && v.s > 0.012) drawLegend(c, v);
+}
+function drawLegend(c, v) {
+  const items = TYPES.map((t, i) => [t, TYPE_COLORS[i]]);
+  c.font = `500 10px ${FONT}`; c.textBaseline = 'middle';
+  const x0 = 8, y0 = 8, lh = 14, w = 84, h = items.length * lh + 8;
+  c.fillStyle = PAL.full.halo; c.fillRect(x0, y0, w, h);
+  items.forEach(([t, col], i) => { c.fillStyle = col; c.beginPath(); c.arc(x0 + 9, y0 + 8 + i * lh, 3.5, 0, Math.PI * 2); c.fill(); c.fillStyle = '#4E4D49'; c.fillText(t, x0 + 17, y0 + 8 + i * lh); });
+}
+function phoneOverlay(c, v) {
+  if (trip) drawHex(c, v, trip.area.cx, trip.area.cy, trip.area.a, UI.markSoft, UI.mark, 1.5, [5, 4]);
+  drawMe(c, v, sim.pos, sim.heading, true);
+}
+function traceOverlay(c, v) {
+  for (const st of K.strokes) drawStrokeWide(c, v, st, UI.trace, BRUSH * 2);
+  drawPin(c, v, HOME[0], HOME[1], '自宅', UI.ink, true);
+}
+
+// ---------------------------------------------------------------- 起動
+async function boot() {
+  const minSplash = new Promise(r => runSplash(r));
+  let raw;
+  try { const res = await fetch('data.json'); if (!res.ok) throw new Error(res.status); raw = await res.json(); }
+  catch (e) { await minSplash; show('failed'); return; }
+  prepareData(raw); resolveLines(); buildNameIndex(); loadBase();
+
+  traceView = new MapView($('#cvTrace'), { pale: true, mode: 'draw', scale: 0.12, labels: 'all', overlay: traceOverlay,
+    drawStroke: (c, v, pts) => drawStrokeWide(c, v, pts, UI.trace, BRUSH * 2),
+    onStroke: pts => { K.strokes.push(pts.map(p => [Math.round(p[0]), Math.round(p[1])])); saveKnown(); recomputeKnown(); refreshSimMap(); } });
+  traceView.setView(-150, -800, 0.12);
+  phoneView = new MapView($('#cvPhone'), { pale: true, mode: 'pan', scale: 0.09, labels: 'stations', overlay: phoneOverlay });
+  simView = new MapView($('#cvSim'), { mode: 'pan', scale: 0.05, labels: 'all', overlay: simOverlay,
+    onTap: w => { if (trip && (trip.phase === 'travel' || trip.phase === 'arrived')) { goToward(w, 'tap'); log('（操作盤）地図でタップした場所まで、道なりに進みます。'); renderCtrl(); } } });
+  simView.setView(0, -300, 0.05);
+
+  loadKnown(); recomputeKnown();
+  sim.time = dayStart(); sim.pos = HOME.slice(); tickUI();
+  getSample();
+  setTimeout(() => buildGraph(), 300);
+  await minSplash;
+  if (store.get('setupDone', false)) { log(`前回の設定を読み込みました。知っている区画: ${K.set.size}。`); goHome(); }
+  else { show('trace'); log('体験版を開きました。舞台は京都・一乗寺駅のまわり。初回設定では、歩いたことがある範囲をなぞってもらいます。過去の位置履歴は他のアプリから取れないため、ここが出発点になります。'); }
+  requestAnimationFrame(loop);
+}
+if (location.hash === '#dev') window.__m = { sim, K, get trip() { return trip; }, get D() { return D; }, selectArea, selectTransit, ruleHint, route, step: (dt, n) => { for (let i = 0; i < n; i++) stepSim(dt); } };
+boot();
+})();
+</script>
+
+</body></html>
