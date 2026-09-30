@@ -51,8 +51,7 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline:2p
 /* 0 起動 */
 .s-splash { align-items:center; justify-content:center; padding:0; animation:none; }
 .s-splash .logo { width:250px; max-width:70%; overflow:visible; }
-.logo g { transition:opacity .45s ease; }
-.s-splash.fade .logo-l1, .s-splash.fade .logo-l2, .s-splash.fade .logo-l3, .s-splash.fade .logo-l4 { opacity:0; }
+.s-splash.out .logo { opacity:0; transition:opacity .45s ease; }   /* マークが回り終わったら、文字とマークが一緒に消える */
 
 /* 00-a なぞる */
 .s-map { padding-inline:0; padding-bottom:0; }
@@ -1221,23 +1220,24 @@ function buzz() {
 }
 const MODE_J = { walk: '徒歩', bike: '自転車', transit: '公共交通' };
 
-// ---- 0 起動：ロゴが1.2秒。消えるとき「！」だけが残って少し回り、次の画面へ
+// ---- 0 起動：ロゴが1.2秒。「！」のマークが少し回り（文字は残したまま）、回り終わったら文字とマークが一緒に消えて次の画面へ
 const LOGO_RING = [144.655, 41.88];   // ロゴのマークのリングの中心（SVG座標）
+const SPLASH_SHOW_MS = 1200, SPLASH_TURN_MS = 900, SPLASH_OUT_MS = 450;
 function runSplash(next) {
   show('splash');
   const sp = screens.splash, mark = $('.s-splash .logo-mark');
-  sp.classList.remove('fade'); mark.removeAttribute('transform');
+  sp.classList.remove('out'); mark.removeAttribute('transform');
   setTimeout(() => {
-    sp.classList.add('fade');
     const t0 = performance.now();
     const turn = now => {
-      const k = Math.min(1, (now - t0) / 900), e = 1 - Math.pow(1 - k, 3);
+      const k = Math.min(1, (now - t0) / SPLASH_TURN_MS), e = 1 - Math.pow(1 - k, 3);
       mark.setAttribute('transform', `rotate(${(e * 28).toFixed(2)} ${LOGO_RING[0]} ${LOGO_RING[1]})`);
       if (k < 1 && current === 'splash') requestAnimationFrame(turn);
     };
     requestAnimationFrame(turn);
-    setTimeout(next, 1150);
-  }, 1200);
+    setTimeout(() => sp.classList.add('out'), SPLASH_TURN_MS);            // 回り終わったら、文字とマークが同時に消える
+    setTimeout(next, SPLASH_TURN_MS + SPLASH_OUT_MS);
+  }, SPLASH_SHOW_MS);
 }
 
 // ---- 00 はじめに
