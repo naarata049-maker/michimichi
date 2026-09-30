@@ -22,12 +22,18 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline:2p
 .stage { min-height:100%; display:flex; gap:44px; justify-content:center; align-items:flex-start; padding-block:24px; padding-inline:24px; }
 
 /* ---------- 端末 ---------- */
-.device { flex:0 0 auto; width:413px; height:min(872px, calc(100vh - 48px)); min-height:600px; position:sticky; top:24px;
+.device { box-sizing:border-box; flex:0 0 auto; width:413px; height:min(872px, calc(100vh - 48px)); min-height:600px; position:sticky; top:24px;   /* 枠10pxの内側が 393×852 */
   border-radius:54px; border:10px solid var(--ink); background:var(--bg); overflow:hidden; box-shadow:0 40px 80px -44px rgba(22,22,22,.5); }
 .device.buzz { animation:buzz .32s linear; }
 @keyframes buzz { 0%,100% { transform:none; } 20% { transform:translateX(-2px); } 40% { transform:translateX(2px); } 60% { transform:translateX(-2px); } 80% { transform:translateX(1px); } }
-.statusbar { position:absolute; z-index:40; top:0; left:0; right:0; height:48px; display:flex; align-items:center; padding:0 34px; font-family:var(--f-num); font-weight:400; font-size:14px; pointer-events:none; }
-.statusbar::after { content:""; position:absolute; top:11px; left:50%; width:110px; height:30px; margin-left:-55px; border-radius:20px; background:var(--ink); }
+/* 端末の上部（iPhone 15 Pro のステータスバー、393×54pt）。これは端末の見た目で、アプリの配色の外。
+   時刻は SF Pro Semibold 17pt（Apple の端末ではシステム書体が SF Pro。書体ファイルは同梱できないため指定だけ） */
+.statusbar { position:absolute; z-index:40; top:0; left:0; right:0; height:54px; pointer-events:none; color:#000;
+  font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", "Helvetica Neue", system-ui, sans-serif; }
+.statusbar::after { content:""; position:absolute; top:11px; left:50%; width:126px; height:37px; margin-left:-63px; border-radius:19px; background:#000; }
+.sb-time { position:absolute; top:18px; left:32px; width:80px; text-align:center; font-size:17px; line-height:22px; font-weight:600; letter-spacing:-.02em; }
+.sb-icons { position:absolute; top:23px; right:32px; display:flex; align-items:center; gap:8px; }
+.sb-icons svg { display:block; fill:currentColor; overflow:visible; }
 .app { position:absolute; inset:0; }
 
 .scr { position:absolute; inset:0; z-index:2; display:flex; flex-direction:column; padding:80px 24px 40px; animation:scrIn .7s ease both; }
@@ -64,9 +70,9 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline:2p
 
 /* 00-b 登録 */
 /* 左上の丸いボタン：戻る（＜）とホーム（家）。「地図を見る」と高さをそろえる */
-.nav-btn { position:absolute; z-index:6; top:50px; left:16px; width:44px; height:44px; padding:0; border-radius:50%; border:1px solid var(--line); background:var(--bg); color:var(--ink); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.nav-btn { position:absolute; z-index:6; top:58px; left:16px; width:44px; height:44px; padding:0; border-radius:50%; border:1px solid var(--line); background:var(--bg); color:var(--ink); display:flex; align-items:center; justify-content:center; cursor:pointer; }
 .nav-btn svg { display:block; width:20px; height:20px; }
-.s-places, .s-privacy { padding-top:112px; }
+.s-places, .s-privacy { padding-top:118px; }
 .s-places { gap:48px; }
 .fields { display:grid; gap:32px; }
 .field { display:grid; gap:4px; }
@@ -125,7 +131,7 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline:2p
 .quiet-note { position:absolute; left:24px; right:24px; bottom:40px; margin:0; text-align:center; font-size:12px; color:var(--sub); }
 .env-icon { position:absolute; left:24px; bottom:36px; width:46px; }
 .env-icon svg { display:block; width:100%; }
-.corner-map { position:absolute; z-index:3; top:56px; right:20px; background:none; border:0; padding:8px 4px; font-size:13px; color:var(--sub); cursor:pointer; text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:5px; }
+.corner-map { position:absolute; z-index:3; top:64px; right:20px; background:none; border:0; padding:8px 4px; font-size:13px; color:var(--sub); cursor:pointer; text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:5px; }
 
 /* 05/08 のりば */
 .s-platform { justify-content:center; align-items:center; text-align:center; gap:24px; }
@@ -252,7 +258,14 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline:2p
 
 <div class="stage">
   <div class="device" id="device">
-    <div class="statusbar" aria-hidden="true"><span id="statusTime">10:00</span></div>
+    <div class="statusbar" aria-hidden="true">
+      <span class="sb-time">9:41</span>
+      <span class="sb-icons">
+        <svg viewBox="0 0 18 12" width="18" height="12"><rect x="0" y="7.6" width="3" height="4.4" rx="1"/><rect x="5" y="5.2" width="3" height="6.8" rx="1"/><rect x="10" y="2.6" width="3" height="9.4" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+        <svg viewBox="0 0 17 12.5" width="17" height="12.5"><path d="M8.5,11.6 L6.1,9.2 A3.4,3.4 0 0 1 10.9,9.2 Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M3.9,7.0 A6.5,6.5 0 0 1 13.1,7.0" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/><path d="M1.5,4.6 A9.9,9.9 0 0 1 15.5,4.6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 27.5 13" width="27.5" height="13"><rect x=".5" y=".5" width="24" height="12" rx="3.8" fill="none" stroke="currentColor" stroke-opacity=".35"/><rect x="2" y="2" width="21" height="9" rx="2.3"/><rect x="25.6" y="4.4" width="1.6" height="4.2" rx=".8" fill-opacity=".4"/></svg>
+      </span>
+    </div>
     <div class="app" id="app">
 
       <section class="scr s-splash" data-s="splash"><svg class="logo" viewBox="22.087 14.724 140.434 31.659" role="img" aria-label="みちみち"><g class="logo-l1"><path d="M29.919 35.117C29.919 34.535 29.419 34.035 28.836 34.035C28.253 34.035 27.753 34.535 27.753 35.117C27.753 35.7 28.253 36.2 28.836 36.2C29.419 36.2 29.919 35.7 29.919 35.117M43.874 36.075C43.125 35.95 42.458 35.867 41.792 35.785L41.167 41.617L36.668 41.117L37.168 35.285C36.46 35.201 35.71 35.16 34.918 35.117C33.96 38.2 32.294 40.284 29.253 40.45C25.129 40.7 23.087 38.117 23.087 35.367C23.087 32.535 25.295 29.619 29.627 29.619C30.127 29.619 30.669 29.66 31.252 29.744L31.502 24.911L24.587 24.87L24.545 20.621L36.293 20.621C36.21 23.87 36.168 27.203 35.876 30.203L37.584 30.328L38.001 25.536L42.833 25.911L42.291 30.828L44.832 31.203Z" fill="#A3B55B"/></g><g class="logo-l2"><path d="M64.282 28.91C69.698 29.66 71.989 32.368 71.989 35.117C71.989 38.492 68.573 41.907 63.157 41.907C62.032 41.907 60.867 41.742 59.617 41.45L59.908 37.742C60.742 37.867 61.492 37.95 62.2 37.95C65.323 37.95 67.115 36.742 67.115 35.492C67.115 34.076 64.782 32.618 59.408 32.826L59.658 25.953L53.243 25.953L53.16 21.413L59.825 21.413L59.95 18.371L65.032 18.663L64.825 21.371L74.614 21.371L74.697 25.911L64.49 25.911Z" fill="#8DB3BE"/></g><g class="logo-l3"><path d="M89.857 35.117C89.857 34.535 89.357 34.035 88.774 34.035C88.19 34.035 87.69 34.535 87.69 35.117C87.69 35.7 88.19 36.2 88.774 36.2C89.357 36.2 89.857 35.7 89.857 35.117M103.812 36.075C103.062 35.95 102.396 35.867 101.729 35.785L101.104 41.617L96.605 41.117L97.105 35.285C96.397 35.201 95.647 35.16 94.856 35.117C93.898 38.2 92.231 40.284 89.19 40.45C85.066 40.7 83.025 38.117 83.025 35.367C83.025 32.535 85.233 29.619 89.565 29.619C90.065 29.619 90.607 29.66 91.19 29.744L91.44 24.911L84.525 24.87L84.483 20.621L96.23 20.621C96.147 23.87 96.105 27.203 95.814 30.203L97.522 30.328L97.938 25.536L102.77 25.911L102.229 30.828L104.77 31.203Z" fill="#E69B80"/></g><g class="logo-l4"><path d="M124.219 28.91C129.635 29.66 131.927 32.368 131.927 35.117C131.927 38.492 128.511 41.907 123.094 41.907C121.969 41.907 120.803 41.742 119.553 41.45L119.846 37.742C120.678 37.867 121.428 37.95 122.136 37.95C125.261 37.95 127.052 36.742 127.052 35.492C127.052 34.076 124.719 32.618 119.346 32.826L119.596 25.953L113.18 25.953L113.096 21.413L119.761 21.413L119.886 18.371L124.969 18.663L124.761 21.371L134.55 21.371L134.633 25.911L124.427 25.911Z" fill="#D3A652"/></g><g class="logo-mark"><path d="M146.534 42.73C146.063 43.767 144.84 44.227 143.803 43.755C142.764 43.284 142.305 42.061 142.776 41.025C143.249 39.987 144.471 39.529 145.508 39.999C146.546 40.471 147.005 41.694 146.534 42.73" fill="#EFB700"/><path d="M147.458 43.15C146.755 44.698 144.931 45.383 143.383 44.68C141.835 43.977 141.15 42.153 141.853 40.605C142.556 39.057 144.381 38.372 145.928 39.075C147.476 39.778 148.161 41.602 147.458 43.15Z" fill="none" stroke="#EFB700" stroke-width="0.5"/><path d="M146.347 38.151C146.684 38.304 146.977 38.513 147.227 38.758L161.522 21.434C159.722 19.95 157.736 18.709 155.613 17.745C153.49 16.781 151.249 16.102 148.95 15.724L145.309 37.887C145.659 37.914 146.01 37.998 146.347 38.151" fill="#EFB700"/></g></svg></section>
@@ -1786,9 +1799,7 @@ function tickUI() {
   const t = fmtTime(sim.time), d = sim.time;
   $('#simClock').textContent = t; $('#sheetClock').textContent = t;
   $('#simDate').textContent = `${d.getMonth() + 1}月${d.getDate()}日（${WEEK[d.getDay()]}）`;
-  $('#simElapsed').textContent = trip && trip.departAt ? `出発から ${Math.floor((sim.time - trip.departAt) / 60000)}分` : '出かける前';
-  $('#statusTime').textContent = t;
-}
+  $('#simElapsed').textContent = trip && trip.departAt ? `出発から ${Math.floor((sim.time - trip.departAt) / 60000)}分` : '出かける前';}
 
 // ---------------------------------------------------------------- 地図の重ね描き
 function refreshSimMap() { simView && simView.request(); traceView && traceView.request(); }
