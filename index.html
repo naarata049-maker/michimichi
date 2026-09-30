@@ -109,14 +109,24 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline:2p
 .mark-layer { position:absolute; inset:0; z-index:1; pointer-events:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
 .mark { display:block; width:340px; max-width:88%; height:auto; aspect-ratio:1; color:var(--mark); overflow:visible; }
 /* §7-9 算出が終わる瞬間の合図：明るさ（不透明度）とわずかなにじみだけ。大きさは変えない。1回の外出につき1度だけ */
-/* 光る時間は 680ms。にじみは 10px を超えない範囲で、2枚重ねて濃くし、ピークを少し保つ */
+/* 光る時間は 900ms。点いて（ease-out）、ピークを約300ms保ち（linear）、静かに消える（ease-in）。にじみは 5px／14px の2枚重ね */
+/* にじみは CSS の filter ではなく、SVG のフィルター（#markGlow）をかけた光の層 .mk-glow の不透明度で出し入れする。
+   CSS の filter:drop-shadow のアニメーションは iPhone（WebKit）でほぼ描かれなかったため。不透明度のアニメーションはどの端末でも動く */
 @keyframes markSpark {
-  0%   { opacity:.85; filter:none; }
-  15%  { opacity:1;   filter:drop-shadow(0 0 4px rgba(226,163,46,.8)) drop-shadow(0 0 10px rgba(226,163,46,.85)); }
-  35%  { opacity:1;   filter:drop-shadow(0 0 4px rgba(226,163,46,.8)) drop-shadow(0 0 10px rgba(226,163,46,.85)); }
-  100% { opacity:.90; filter:none; }
+  0%   { opacity:.85; animation-timing-function:ease-out; }
+  12%  { opacity:1;   animation-timing-function:linear; }
+  55%  { opacity:1;   animation-timing-function:ease-in; }
+  100% { opacity:.90; }
 }
-.mark.spark { animation:markSpark 680ms ease-out both; }
+@keyframes markGlow {
+  0%   { opacity:0; animation-timing-function:ease-out; }
+  12%  { opacity:1; animation-timing-function:linear; }
+  55%  { opacity:1; animation-timing-function:ease-in; }
+  100% { opacity:0; }
+}
+.mark.spark { animation:markSpark 900ms linear both; }
+.mark .mk-glow { display:none; }
+.mark.spark .mk-glow { display:inline; animation:markGlow 900ms linear both; }
 .cp-line { margin:0; visibility:hidden; }
 .cp-cond { font-size:12px; letter-spacing:.12em; color:var(--sub); }
 .cp-dist { display:flex; align-items:baseline; gap:6px; line-height:1; font-size:40px; letter-spacing:.02em; font-family:var(--f-num); font-weight:300; font-variant-numeric:tabular-nums; }
@@ -252,6 +262,10 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline:2p
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+}
+/* 1回の穏やかな明るさの変化は「視差効果を減らす」の対象外（対象は動き・拡大・回転）。扇の回転と円・目盛りのフェードは上のとおり止まる */
+@media (prefers-reduced-motion: reduce) {
+  .mark.spark, .mark.spark .mk-glow { animation-duration:900ms !important; }
 }
 </style>
 
@@ -409,6 +423,18 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline:2p
               <stop offset="0.155" stop-color="currentColor" stop-opacity="1"/>
               <stop offset="1" stop-color="currentColor" stop-opacity="0.12"/>
             </radialGradient>
+            <!-- 算出が終わる瞬間の光（§7-9）。CSS の filter:drop-shadow は iPhone（WebKit）でほぼ描かれないため、SVG のフィルターで橙のにじみを作る -->
+            <!-- drop-shadow(0 0 5px .85) drop-shadow(0 0 14px .9) と同じ光：2枚目は「元の形＋1枚目の光」をぼかす。出すのは光の部分だけで、扇はこの上に重なる -->
+            <filter id="markGlow" filterUnits="userSpaceOnUse" x="-200" y="-200" width="400" height="400" color-interpolation-filters="sRGB">
+              <feFlood flood-color="#E2A32E" flood-opacity="0.85"/>
+              <feComposite in2="SourceAlpha" operator="in"/>
+              <feGaussianBlur stdDeviation="5" result="near"/>
+              <feMerge result="withNear"><feMergeNode in="near"/><feMergeNode in="SourceGraphic"/></feMerge>
+              <feFlood flood-color="#E2A32E" flood-opacity="0.9"/>
+              <feComposite in2="withNear" operator="in"/>
+              <feGaussianBlur stdDeviation="14" result="far"/>
+              <feMerge><feMergeNode in="far"/><feMergeNode in="near"/></feMerge>
+            </filter>
           </defs>
           <g id="mkDial" style="opacity:0">
             <circle r="156" fill="none" stroke="#DEDCD6" stroke-width="1.2"/>
@@ -416,9 +442,10 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline:2p
             <path id="mkTicksMajor" fill="none" stroke="#161616" stroke-width="1.2" opacity="0.8"/>
             <path d="M0,-170 l6,9 h-12 z" fill="#161616"/>
           </g>
-          <g id="mkRot"><path d="M-40.38,-150.69 A156,156 0 0 1 40.38,-150.69 L6.26,-23.36 A24.18,24.18 0 0 0 -6.26,-23.36 Z" fill="url(#markGrad)"/></g>
-          <circle r="17.71" fill="none" stroke="currentColor" stroke-width="2.65"/>
-          <circle r="12.64" fill="currentColor"/>
+          <g class="mk-glow" filter="url(#markGlow)"><use href="#mkFan"/><use href="#mkRing"/><use href="#mkDot"/></g>
+          <g id="mkRot"><path id="mkFan" d="M-40.38,-150.69 A156,156 0 0 1 40.38,-150.69 L6.26,-23.36 A24.18,24.18 0 0 0 -6.26,-23.36 Z" fill="url(#markGrad)"/></g>
+          <circle id="mkRing" r="17.71" fill="none" stroke="currentColor" stroke-width="2.65"/>
+          <circle id="mkDot" r="12.64" fill="currentColor"/>
         </svg>
         <p class="cp-line cp-dist" aria-live="polite"><span id="distNum">—</span><small id="distUnit">m</small></p>
         <p class="cp-line cp-eta" id="cpEta"></p>
@@ -1349,7 +1376,7 @@ function setMarkLayer({ dial, dist, pre }) {
 // 扇が真上で止まるまで（探す→決まる→収まる）
 const CALC_STOP_MS = 3580;
 // 止まってから（仕様書 §7-9）：250ms 間を置く → 光る 680ms → 260ms 待つ → 円・目盛り・▲ 400ms → 300ms 待つ → 扇が回る 700ms
-const BEFORE_SPARK_MS = 250, SPARK_MS = 680, AFTER_SPARK_MS = 260, DIAL_IN_MS = 400, BEFORE_TURN_MS = 300, TURN_MS = 700;
+const BEFORE_SPARK_MS = 250, SPARK_MS = 900, AFTER_SPARK_MS = 260, DIAL_IN_MS = 400, BEFORE_TURN_MS = 300, TURN_MS = 700;
 function runCalc(done) {
   const g = $('#mkRot'), svg = $('#mark'), dial = $('#mkDial');
   const face = facingAngle([trip.area.cx, trip.area.cy]);
