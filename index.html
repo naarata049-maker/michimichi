@@ -118,10 +118,11 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline:2p
   55%  { opacity:1;   animation-timing-function:ease-in; }
   100% { opacity:.90; }
 }
+/* 光の強さはここのピークの値で決める（1＝元の強さ。2026-09-30 に弱めて .7） */
 @keyframes markGlow {
   0%   { opacity:0; animation-timing-function:ease-out; }
-  12%  { opacity:1; animation-timing-function:linear; }
-  55%  { opacity:1; animation-timing-function:ease-in; }
+  12%  { opacity:.7; animation-timing-function:linear; }
+  55%  { opacity:.7; animation-timing-function:ease-in; }
   100% { opacity:0; }
 }
 .mark.spark { animation:markSpark 900ms linear both; }
